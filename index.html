@@ -1,0 +1,4265 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReportFlow - Blade Repair</title>
+
+    <!-- Funções comuns entre as ferramentas do FlowSuite (escapeHtml, permissão,
+         tradução, cache por empresa, etc.) — precisa vir antes do script principal. -->
+    <script src="https://carlosocjunior.github.io/FlowSuite/shared.js"></script>
+
+    <style>
+         * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 30px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .header img {
+            height: 60px;
+        }
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+        }
+        .header .subtitulo {
+            color: #007bff;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+        .btn-inicio-header {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+        .btn-inicio-header:hover {
+            background: #5a6268;
+            transform: scale(1.02);
+        }
+        .btn-inicio-header.oculto {
+            display: none;
+        }
+
+        /* Seção Técnicos - visível apenas na tela inicial */
+        .equipe-area {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        .equipe-area.oculto {
+            display: none;
+        }
+        .equipe-area label {
+            font-weight: bold;
+            color: #555;
+            font-size: 14px;
+        }
+        .equipe-area input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            width: 100%;
+        }
+        .equipe-area input:focus {
+            outline: 2px solid #007bff;
+            border-color: transparent;
+        }
+        .menu-principal {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+        .menu-principal button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .menu-principal button:hover {
+            transform: scale(1.03);
+            opacity: 0.9;
+        }
+        .btn-blade { background: #dc3545; color: white; }
+        .btn-balanceamento { background: #ffc107; color: #333; }
+        .btn-timesheet { background: #28a745; color: white; }
+
+        .menu-principal.oculto {
+            display: none;
+        }
+
+        .painel-inicial {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .painel-inicial.oculto {
+            display: none;
+        }
+        .btn-novo-relatorio {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-novo-relatorio:hover {
+            opacity: 0.9;
+        }
+        .painel-lista {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 12px;
+        }
+        .painel-card {
+            background: #f8f9fa;
+            border: 1px solid #e2e2e2;
+            border-radius: 8px;
+            padding: 14px;
+        }
+        .painel-card .titulo {
+            font-weight: bold;
+            color: #2C3E50;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .painel-card .meta {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 10px;
+        }
+        .painel-card .acoes {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .painel-card .acoes button, .painel-card .acoes a {
+            font-size: 12px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .painel-card .btn-continuar { background: #007bff; color: white; }
+        .painel-card .btn-excluir-relatorio { background: #dc3545; color: white; }
+        .painel-card .btn-ver-pdf { background: #28a745; color: white; }
+        .painel-vazio {
+            color: #999;
+            font-size: 13px;
+            padding: 10px 0;
+        }
+
+        .pagina {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .pagina.ativa {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .nivel-botoes {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .nivel-botoes button {
+            padding: 12px 25px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            background: #f8f9fa;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .nivel-botoes button:hover {
+            background: #e9ecef;
+            border-color: #007bff;
+            transform: scale(1.02);
+        }
+        .nivel-botoes button.ativo {
+            background: #007bff;
+            border-color: #007bff;
+            color: white;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .modal-overlay.oculto {
+            display: none;
+        }
+        .modal-box {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .modal-box p {
+            white-space: pre-line;
+            font-size: 15px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .modal-botoes {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .modal-botoes button {
+            padding: 10px 18px;
+            border-radius: 6px;
+            border: none;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .modal-btn-cancelar {
+            background: #e9ecef;
+            color: #333;
+        }
+        .modal-btn-ok {
+            background: #dc3545;
+            color: white;
+        }
+
+        .etapa-wizard {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 15px;
+            border-left: 4px solid #007bff;
+        }
+        .etapa-header-wizard {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .etapa-header-wizard .etapa-titulo {
+            flex: 1;
+        }
+        .etapa-header-wizard .etapa-titulo h3 {
+            color: #2C3E50;
+            margin-bottom: 5px;
+        }
+        .etapa-header-wizard .etapa-titulo h4 {
+            color: #007bff;
+        }
+        .etapa-header-wizard .nav-botoes-wizard {
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        .etapa-header-wizard .nav-botoes-wizard button {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+        .etapa-header-wizard .nav-botoes-wizard button:hover {
+            transform: scale(1.02);
+        }
+        .etapa-header-wizard .nav-botoes-wizard .btn-proximo {
+            background: #28a745;
+            color: white;
+        }
+        .etapa-header-wizard .nav-botoes-wizard .btn-proximo:hover {
+            background: #218838;
+        }
+        .etapa-header-wizard .nav-botoes-wizard .btn-anterior-nav {
+            background: #6c757d;
+            color: white;
+        }
+        .etapa-header-wizard .nav-botoes-wizard .btn-anterior-nav:hover {
+            background: #5a6268;
+        }
+        .etapa-wizard label {
+            font-weight: bold;
+            display: block;
+            margin: 10px 0 5px;
+            color: #333;
+        }
+        .etapa-wizard textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            min-height: 80px;
+            font-size: 14px;
+            font-family: Arial;
+        }
+        .etapa-wizard input[type="text"],
+        .etapa-wizard input[type="number"],
+        .etapa-wizard input[type="date"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .etapa-wizard input[type="file"] {
+            display: block;
+            margin: 8px 0 15px;
+            padding: 8px;
+            background: white;
+            border: 1px dashed #ccc;
+            border-radius: 6px;
+            width: 100%;
+        }
+        .obrigatorio {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .etapa-wizard .fotos-min {
+            display: inline-block;
+            background: #17a2b8;
+            color: white;
+            font-size: 12px;
+            padding: 2px 12px;
+            border-radius: 12px;
+            margin-left: 8px;
+        }
+
+        .btn-next {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 15px;
+        }
+        .btn-next:hover {
+            background: #218838;
+        }
+
+        .btn-submit {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        .btn-submit:hover {
+            background: #c82333;
+        }
+
+        .btn-dashboard-ts {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        .btn-dashboard-ts:hover {
+            background: #0069d9;
+        }
+
+        .modal-dashboard-box {
+            background: white;
+            border-radius: 10px;
+            padding: 25px 30px;
+            max-width: 1000px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .modal-dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .modal-dashboard-header h3 {
+            color: #2C3E50;
+        }
+        .btn-fechar-dashboard {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .btn-fechar-dashboard:hover {
+            background: #5a6268;
+        }
+        .dashboard-graficos-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        @media (max-width: 700px) {
+            .dashboard-graficos-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .dashboard-grafico-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 12px;
+        }
+        .dashboard-grafico-box h4 {
+            color: #2C3E50;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .dashboard-legenda {
+            display: flex;
+            gap: 14px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .dashboard-legenda span {
+            font-size: 11px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .dashboard-legenda .cor-box {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        .resumo-box {
+            background: #e9ecef;
+            padding: 25px;
+            border-radius: 10px;
+        }
+        .resumo-box .item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        .resumo-box .item strong {
+            color: #007bff;
+        }
+
+        .tabela-wizard {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .tabela-wizard th {
+            background: #007bff;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-size: 13px;
+        }
+        .tabela-wizard td {
+            padding: 6px;
+            border: 1px solid #dee2e6;
+        }
+        .tabela-wizard select,
+        .tabela-wizard input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .grid-fotos {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 10px;
+            grid-auto-flow: row;
+        }
+        .grid-fotos .foto-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 5px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        .grid-fotos .foto-item img {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+            border-radius: 4px;
+            display: block;
+        }
+        .grid-fotos .foto-item .btn-remover {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            padding: 0;
+        }
+        .grid-fotos .foto-item .btn-remover:hover {
+            background: #c82333;
+        }
+        .grid-fotos .foto-vazio {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            border: 1px dashed #dee2e6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 13px;
+            min-height: 100px;
+        }
+
+        .preview-imagens {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .preview-imagens .foto-item {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 4px;
+            border: 1px solid #dee2e6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        .preview-imagens .foto-item img {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+            border-radius: 4px;
+            display: block;
+        }
+        .preview-imagens .foto-item .btn-remover {
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            padding: 0;
+        }
+        .preview-imagens .foto-item .btn-remover:hover {
+            background: #c82333;
+        }
+
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+        .grid-2col > div {
+            display: flex;
+            flex-direction: column;
+        }
+        .grid-2col label {
+            margin-top: 0;
+            margin-bottom: 6px;
+            font-weight: bold;
+            color: #555;
+            font-size: 13px;
+        }
+        .grid-2col input {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 100%;
+            font-family: Arial, sans-serif;
+            height: 42px;
+        }
+        .grid-2col input:focus {
+            outline: 2px solid #007bff;
+            border-color: transparent;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .foto-status {
+            font-size: 13px;
+            margin-top: 5px;
+            color: #666;
+        }
+        .foto-status .ok {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .foto-status .falta {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .acoes-resumo {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .acoes-resumo button {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+        .acoes-resumo button:hover {
+            transform: scale(1.02);
+            opacity: 0.9;
+        }
+        .acoes-resumo .btn-editar {
+            background: #ffc107;
+            color: #333;
+        }
+        .acoes-resumo .btn-visualizar {
+            background: #6f42c1;
+            color: white;
+        }
+        .acoes-resumo .btn-exportar {
+            background: #17a2b8;
+            color: white;
+        }
+        .acoes-resumo .btn-submit {
+            background: #dc3545;
+            color: white;
+            font-size: 16px;
+            padding: 10px 30px;
+        }
+/* Estilos para etapas genéricas */
+.etapa-generica {
+    background: #f8f9fa;
+    padding: 20px 20px 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    border-left: 4px solid #6c757d;
+}
+.etapa-generica .etapa-nome {
+    font-size: 16px;
+    font-weight: bold;
+    color: #2C3E50;
+    margin-bottom: 10px;
+}
+.etapa-generica input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: bold;
+    color: #2C3E50;
+}
+.etapa-generica textarea {
+    width: 100%;
+    min-height: 70px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-family: Arial, sans-serif;
+    resize: vertical;
+    font-size: 14px;
+    margin-top: 8px;
+}
+.etapa-generica input[type="file"] {
+    display: block;
+    margin: 8px 0 10px;
+    padding: 8px;
+    background: white;
+    border: 1px dashed #ccc;
+    border-radius: 6px;
+    width: 100%;
+}
+.etapa-generica .preview-imagens {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 8px;
+}
+.etapa-generica .foto-item {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 4px;
+    border: 1px solid #dee2e6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+}
+.etapa-generica .foto-item img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    border-radius: 4px;
+    display: block;
+}
+.etapa-generica .foto-item .btn-remover {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+}
+.etapa-generica .btn-remover:hover {
+    background: #c82333;
+}
+.etapa-generica .foto-status {
+    font-size: 13px;
+    color: #666;
+    margin-top: 5px;
+}
+.btn-adicionar-etapa {
+    background: #17a2b8;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 15px;
+    transition: 0.2s;
+    margin-top: 5px;
+}
+.btn-adicionar-etapa:hover {
+    background: #138496;
+    transform: scale(1.02);
+}
+.btn-finalizar-generico {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 15px;
+    transition: 0.2s;
+    margin-top: 5px;
+}
+.btn-finalizar-generico:hover {
+    background: #218838;
+    transform: scale(1.02);
+}
+.botoes-acoes-generico {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+.etapa-generica .etapa-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.etapa-generica .etapa-header .etapa-numero {
+    font-size: 13px;
+    color: #888;
+    font-weight: normal;
+}
+.etapa-generica .etapa-header .btn-remover-etapa {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+}
+.etapa-generica .etapa-header .btn-remover-etapa:hover {
+    background: #c82333;
+    transform: scale(1.05);
+}
+        @media (max-width: 600px) {
+            body { padding: 15px; }
+            .container { padding: 15px; }
+            .header { flex-direction: column; align-items: stretch; }
+            .header-left { flex-wrap: wrap; }
+            .header-right { justify-content: flex-end; }
+            .menu-principal button { width: 100%; }
+            .nivel-botoes button { width: 100%; }
+            .grid-2col { grid-template-columns: 1fr; }
+            .equipe-area input { width: 100%; }
+            .grid-fotos { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .preview-imagens { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .etapa-header-wizard { flex-direction: column; align-items: stretch; }
+            .etapa-header-wizard .nav-botoes-wizard { justify-content: flex-end; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- CABEÇALHO -->
+    <div class="header">
+    <div class="header-left">
+        <div style="font-family: Arial, sans-serif; line-height: 1.1; text-align: center; padding: 4px 12px; border-right: 2px solid #007bff;">
+            <div style="font-size: 22px; font-weight: 900; color: #007bff; letter-spacing: 1px;">SYNVORA</div>
+            <div style="font-size: 14px; font-weight: 700; color: #333; letter-spacing: 2px;">LABS</div>
+            <div style="font-size: 9px; font-weight: 600; color: #666; letter-spacing: 1px;">SMARTOPERATIONSPLATFORM</div>
+        </div>
+        <div>
+            <h1>ReportFlow</h1>
+            <div class="subtitulo" id="subtituloModulo"></div>
+        </div>
+    </div>
+    <div class="header-right">
+        <button class="btn-inicio-header oculto" id="btnInicioHeader" onclick="confirmarVoltarInicio()" data-i18n="inicioBtn">Início</button>
+    </div>
+</div>
+    <!-- PAINEL INICIAL - LISTA DE RELATÓRIOS DO USUÁRIO -->
+    <div class="painel-inicial" id="painelInicial">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
+            <h2 style="color:#2C3E50; margin:0;" data-i18n="meusRelatorios">Meus Relatórios</h2>
+            <button class="btn-novo-relatorio" id="btnNovoRelatorio" onclick="novoRelatorio()" data-i18n="novoRelatorioBtn">Novo Relatório</button>
+        </div>
+        <div id="painelCarregando" style="text-align:center; padding:30px; color:#888;" data-i18n="carregandoRelatorios">Carregando relatórios...</div>
+        <div id="painelListaContainer" style="display:none;">
+            <h3 style="color:#555; font-size:15px; margin:15px 0 10px;" data-i18n="emProcesso">Em Processo</h3>
+            <div id="painelListaEmProcesso" class="painel-lista"></div>
+            <h3 style="color:#555; font-size:15px; margin:25px 0 10px;" data-i18n="concluidos">Concluídos</h3>
+            <div id="painelListaConcluidos" class="painel-lista"></div>
+        </div>
+    </div>
+
+    <!-- TÉCNICOS - Visível apenas na tela inicial -->
+    <div class="equipe-area oculto" id="equipeArea">
+        <label style="width:100%; margin-bottom:5px;" data-i18n="tecnicosLabel">Técnico</label>
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:10px; width:100%;">
+            <div></div>
+            <div style="font-weight:bold; font-size:13px; color:#555;" data-i18n="funcaoLabel">Função</div>
+        </div>
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:10px; width:100%;">
+            <input type="text" id="tecnico1_nome" data-i18n-placeholder="tecnico1Placeholder" placeholder="Nome do Técnico 1">
+            <input type="text" id="tecnico1_funcao" data-i18n-placeholder="funcaoLabel" placeholder="Função">
+        </div>
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:10px; width:100%;">
+            <input type="text" id="tecnico2_nome" data-i18n-placeholder="tecnico2Placeholder" placeholder="Nome do Técnico 2">
+            <input type="text" id="tecnico2_funcao" data-i18n-placeholder="funcaoLabel" placeholder="Função">
+        </div>
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:10px; width:100%;">
+            <input type="text" id="tecnico3_nome" data-i18n-placeholder="tecnico3Placeholder" placeholder="Nome do Técnico 3">
+            <input type="text" id="tecnico3_funcao" data-i18n-placeholder="funcaoLabel" placeholder="Função">
+        </div>
+    </div>
+
+    <!-- MENU PRINCIPAL -->
+    <div class="menu-principal oculto" id="menuPrincipal">
+        <button class="btn-blade" onclick="abrirPagina('blade')" data-i18n="menuBlade">Blade Repair</button>
+        <button class="btn-timesheet" onclick="abrirPagina('timesheet')" data-i18n="menuTimesheet">TimeSheet</button>
+    </div>
+
+    <!-- ==================== PÁGINA BLADE REPAIR ==================== -->
+    <div id="paginaBlade" class="pagina">
+        <!-- NÍVEL 0 - MASTER DATA -->
+        <div id="nivel0">
+            <h2 style="color: #2C3E50;" data-i18n="dadosServicoTitulo">Dados do Serviço</h2>
+            <div id="masterDataContainer" style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 15px;"></div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                <button class="btn-next" onclick="prosseguirMasterData()" data-i18n="continuarBtn">Continuar →</button>
+            </div>
+        </div>
+
+                <!-- NÍVEL 2 (inclui Dano + Tipo de Reparo) -->
+        <div id="nivel2" class="hidden">
+            <h3 style="color: #2C3E50;" data-i18n="danoTitulo">Dano</h3>
+            <p style="color:#555; font-size:14px; margin: 8px 0 12px;" data-i18n="danoDescricaoTexto">Descreva exatamente o tipo de dano e sua localização. Incluir detalhes entre WEB, LE/TE, DW/UW, TIP e Root.</p>
+            <textarea id="danoDescricao" placeholder="Describe exactly the type of damage and its location. Include details between WEB, LE/TE, DW/UW, TIP and Root." style="width:100%; min-height:110px; padding:12px; border:1px solid #ddd; border-radius:6px; font-size:14px; font-family: Arial, sans-serif; resize:vertical;"></textarea>
+            <div style="display:flex; gap:15px; margin-top:15px;">
+                <div>
+                    <label style="font-weight:bold; color:#555; font-size:13px; display:block; margin-bottom:5px;">Zi</label>
+                    <input type="text" id="danoZi" maxlength="6" style="width:100px; padding:8px 12px; border:1px solid #ddd; border-radius:5px; font-size:14px;">
+                </div>
+                <div>
+                    <label style="font-weight:bold; color:#555; font-size:13px; display:block; margin-bottom:5px;">Zf</label>
+                    <input type="text" id="danoZf" maxlength="6" style="width:100px; padding:8px 12px; border:1px solid #ddd; border-radius:5px; font-size:14px;">
+                </div>
+            </div>
+            <div style="margin-top:20px;">
+                <div class="nivel-botoes" id="tipoReparoBotoes">
+                    <button type="button" id="btnReparoInterno" onclick="selecionarTipoReparo('interno')" data-i18n="reparosInternos">Reparos Internos</button>
+                    <button type="button" id="btnReparoExterno" onclick="selecionarTipoReparo('externo')" data-i18n="reparosExternos">Reparos Externos</button>
+                    <button type="button" id="btnReparoGenerico" onclick="selecionarTipoReparo('generico')">Genérico</button>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                <button class="btn-next" onclick="confirmarDano()" data-i18n="continuarBtn">Continuar →</button>
+            </div>
+        </div>
+
+                <!-- NÍVEL 3 -->
+        <div id="nivel3" class="hidden">
+            <div id="wizardContainer"></div>
+        </div> 
+    </div>
+
+        <!-- ==================== PÁGINA TIMESHEET ==================== -->
+    <div id="paginaTimesheet" class="pagina">
+        <h2 data-i18n="tsPageTitulo">TimeSheet Semanal</h2>
+
+        <!-- DADOS DO CLIENTE (igual ao Blade Repair) -->
+        <div id="tsMasterData" style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 15px;"></div>
+
+        <div style="display:flex; align-items:center; gap:15px; margin: 20px 0; flex-wrap:wrap;">
+            <button class="btn-anterior-nav" onclick="mudarSemanaTimesheet(-1)">← <span data-i18n="tsSemanaAnterior">Semana anterior</span></button>
+            <div id="tsSemanaLabel" style="font-weight:bold; color:#2C3E50; font-size:15px; min-width:180px; text-align:center;"></div>
+            <button class="btn-anterior-nav" onclick="mudarSemanaTimesheet(1)"><span data-i18n="tsSemanaProxima">Próxima semana</span> →</button>
+        </div>
+
+        <div style="margin-bottom:15px; max-width:320px;">
+            <label data-i18n="tsTecnicoLabel">Técnico</label>
+            <select id="tsTecnicoSelect" onchange="renderizarTimesheet()" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; font-size:14px;"></select>
+        </div>
+
+        <div id="tsTabelaContainer"></div>
+
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px;">
+            <label data-i18n="observacoesLabel">Observações (opcional)</label>
+            <textarea id="tsObservacoes" oninput="salvarObservacaoTimesheet()" style="width:100%; min-height:70px; padding:10px; border:1px solid #ddd; border-radius:6px; font-family: Arial, sans-serif; resize:vertical;"></textarea>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <h4 style="color:#2C3E50; margin-bottom:10px;" data-i18n="tsAssinaturaTecnico">Assinatura do Técnico</h4>
+                <label data-i18n="nomeLabel">Nome</label>
+                <input type="text" id="tsAssinaturaTecnicoNome" oninput="salvarAssinaturaTimesheet()" style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:5px; font-size:14px;">
+                <label style="margin-top:8px; display:block;" data-i18n="tsDataLabel">Data</label>
+                <input type="date" id="tsAssinaturaTecnicoData" onchange="salvarAssinaturaTimesheet()" style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:5px; font-size:14px;">
+            </div>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <h4 style="color:#2C3E50; margin-bottom:10px;" data-i18n="tsAssinaturaCliente">Assinatura do Cliente/Responsável</h4>
+                <label data-i18n="nomeLabel">Nome</label>
+                <input type="text" id="tsAssinaturaClienteNome" oninput="salvarAssinaturaTimesheet()" style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:5px; font-size:14px;">
+                <label style="margin-top:8px; display:block;" data-i18n="tsDataLabel">Data</label>
+                <input type="date" id="tsAssinaturaClienteData" onchange="salvarAssinaturaTimesheet()" style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:5px; font-size:14px;">
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 30px;">
+            <button class="btn-dashboard-ts" onclick="abrirDashboardTimesheet()" data-i18n="dashboardBtn">Dashboard</button>
+            <button class="btn-submit" onclick="gerarRelatorioTimesheet()" data-i18n="gerarRelatorioBtn">Gerar Relatório</button>
+        </div>
+    </div>
+
+<script>
+    // ==========================================
+    // AUTENTICAÇÃO / PERMISSÃO (FLOWSUITE)
+    // ==========================================
+    const FLOWSUITE_API_URL = 'https://flowsuite-plus-api.flowsuite-plus.workers.dev';
+    const REPORTFLOW_API_URL = FLOWSUITE_API_URL;
+    const MODULO_ATUAL = 'reportflow';
+    let empresaIdAtual = '';
+
+    let permissaoUsuario = null; // 'admin' | 'editor' | 'leitura'
+    let usuarioFlowsuite = null;
+
+    // ID do relatório sendo editado no momento (null = ainda não salvo/novo)
+    let relatorioIdAtual = null;
+
+    // getTokenDaURL() e getEmpresaVisualizandoDaURL() agora vêm do shared.js
+
+    async function validarAcessoFlowsuite() {
+        const token = getTokenDaURL();
+        if (!token) return false;
+
+        try {
+            const response = await fetch(FLOWSUITE_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ acao: 'verificar', token: token, empresaVisualizando: getEmpresaVisualizandoDaURL() })
+            });
+            const resultado = await response.json();
+
+            if (!resultado.valido || !resultado.usuario.modulos.includes(MODULO_ATUAL)) {
+                return false;
+            }
+
+            empresaIdAtual = resultado.usuario.empresa || getEmpresaVisualizandoDaURL() || '';
+            usuarioFlowsuite = resultado.usuario;
+            permissaoUsuario = resultado.usuario.permissao || 'leitura';
+            return true;
+        } catch (e) {
+            console.error('Erro ao validar acesso FlowSuite:', e);
+            return false;
+        }
+    }
+
+    // podeEditar() e podeExcluir() agora vêm do shared.js (usam permissaoUsuario daqui)
+
+    // ==========================================
+    // PAINEL INICIAL - LISTAR / ABRIR / EXCLUIR RELATÓRIOS
+    // ==========================================
+    async function carregarPainel() {
+        const btnNovo = document.getElementById('btnNovoRelatorio');
+        if (btnNovo) btnNovo.style.display = podeEditar() ? '' : 'none';
+
+        const token = getTokenDaURL();
+        const carregando = document.getElementById('painelCarregando');
+        const listaContainer = document.getElementById('painelListaContainer');
+
+        try {
+            const response = await fetch(REPORTFLOW_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ acao: 'listarRelatorios', token: token, empresaId: empresaIdAtual })
+            });
+            const resultado = await response.json();
+
+            carregando.style.display = 'none';
+            listaContainer.style.display = '';
+
+            if (!resultado.success) {
+                document.getElementById('painelListaEmProcesso').innerHTML = `<div class="painel-vazio">${tf('erroAoCarregar', {erro: resultado.error || ''})}</div>`;
+                return;
+            }
+
+            const relatorios = resultado.relatorios || [];
+            const emProcesso = relatorios.filter(r => r.status !== 'concluido');
+            const concluidos = relatorios.filter(r => r.status === 'concluido');
+
+            renderizarCardsPainel('painelListaEmProcesso', emProcesso, true);
+            renderizarCardsPainel('painelListaConcluidos', concluidos, false);
+        } catch (e) {
+            console.error('Erro ao carregar painel:', e);
+            carregando.textContent = t('erroAoCarregarRelatorios');
+        }
+    }
+
+    function iconeModulo(modulo) {
+        return modulo === 'timesheet' ? '' : '';
+    }
+
+    function formatarDataHora(iso) {
+        try {
+            const d = new Date(iso);
+            return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        } catch (e) {
+            return iso || '';
+        }
+    }
+
+    function renderizarCardsPainel(idContainer, lista, emProcesso) {
+        const container = document.getElementById(idContainer);
+        if (lista.length === 0) {
+            container.innerHTML = `<div class="painel-vazio">${emProcesso ? t('nenhumRelatorioEmProcesso') : t('nenhumRelatorioConcluido')}</div>`;
+            return;
+        }
+
+        container.innerHTML = lista.map(r => `
+            <div class="painel-card">
+                <div class="titulo">${iconeModulo(r.modulo)} ${escapeHtml(r.titulo) || '(sem título)'}</div>
+                <div class="meta">${tf('atualizadoEm', {data: formatarDataHora(r.dataAtualizacao)})}</div>
+                <div class="acoes">
+                    ${emProcesso && podeEditar() ? `<button class="btn-continuar" onclick="continuarRelatorio('${r.id}')">${t('continuarRelatorioBtn')}</button>` : ''}
+                    ${!emProcesso && r.pdfUrl ? `<a class="btn-ver-pdf" href="${r.pdfUrl}" target="_blank">${t('verPdfBtn')}</a>` : ''}
+                    ${podeExcluir() || podeEditar() ? `<button class="btn-excluir-relatorio" onclick="excluirRelatorioPainel('${r.id}')">${t('excluirBtn')}</button>` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function excluirRelatorioPainel(id) {
+        if (!confirm('Tem certeza que deseja excluir este relatório?')) return;
+        const token = getTokenDaURL();
+        try {
+            const response = await fetch(REPORTFLOW_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ acao: 'excluirRelatorio', token: token, id: id, empresaId: empresaIdAtual })
+            });
+            const resultado = await response.json();
+            if (!resultado.success) {
+                alert('Erro ao excluir: ' + (resultado.error || ''));
+                return;
+            }
+            carregarPainel();
+        } catch (e) {
+            alert('Erro ao excluir relatório.');
+        }
+    }
+
+    function irParaPainel() {
+        document.querySelectorAll('.pagina').forEach(p => p.classList.remove('ativa'));
+        document.getElementById('btnInicioHeader').classList.add('oculto');
+        document.getElementById('subtituloModulo').textContent = '';
+        document.getElementById('equipeArea').classList.add('oculto');
+        document.getElementById('menuPrincipal').classList.add('oculto');
+        document.getElementById('painelInicial').classList.remove('oculto');
+        moduloAtual = '';
+        relatorioIdAtual = null;
+        carregarPainel();
+    }
+
+    function novoRelatorio() {
+        if (!podeEditar()) { alert('Você não tem permissão para criar relatórios.'); return; }
+        relatorioIdAtual = null;
+        document.getElementById('painelInicial').classList.add('oculto');
+        document.getElementById('equipeArea').classList.remove('oculto');
+        document.getElementById('menuPrincipal').classList.remove('oculto');
+    }
+
+    async function continuarRelatorio(id) {
+        const token = getTokenDaURL();
+        try {
+            const response = await fetch(REPORTFLOW_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ acao: 'carregarRelatorio', token: token, id: id, empresaId: empresaIdAtual })
+            });
+            const resultado = await response.json();
+            if (!resultado.success) {
+                alert('Erro ao abrir relatório: ' + (resultado.error || ''));
+                return;
+            }
+            restaurarRelatorio(resultado.relatorio);
+        } catch (e) {
+            alert('Erro ao abrir relatório.');
+        }
+    }
+
+    // ==========================================
+    // AUTOSAVE - CAPTURAR ESTADO ATUAL
+    // ==========================================
+    function bloquearAcesso() {
+        document.body.innerHTML = `
+            <div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:Arial,sans-serif;text-align:center;">
+                <div>
+                    <div style="font-size:50px;"></div>
+                    <h2 style="color:#2C3E50;margin:10px 0;">Acesso restrito</h2>
+                    <p style="color:#666;">Acesse esta ferramenta pelo FlowSuite.</p>
+                </div>
+            </div>
+        `;
+    }
+
+    function capturarTecnicos() {
+        const tecnicos = [];
+        for (let i = 1; i <= 3; i++) {
+            const nome = document.getElementById(`tecnico${i}_nome`)?.value.trim() || '';
+            const funcao = document.getElementById(`tecnico${i}_funcao`)?.value.trim() || '';
+            if (nome || funcao) tecnicos.push({ nome, funcao });
+        }
+        return tecnicos;
+    }
+
+    function capturarEstadoBlade() {
+        return {
+            masterData: masterData,
+            tipoReparo: tipoReparo,
+            defeitoSelecionado: defeitoSelecionado,
+            danoDescricao: document.getElementById('danoDescricao')?.value || '',
+            danoZi: document.getElementById('danoZi')?.value || '',
+            danoZf: document.getElementById('danoZf')?.value || '',
+            relatorioAtual: relatorioAtual,
+            tecnicos: window.dadosTecnicos && window.dadosTecnicos.length ? window.dadosTecnicos : capturarTecnicos(),
+            idiomaAtual: idiomaAtual
+        };
+    }
+
+    function capturarEstadoTimesheet() {
+        return {
+            tsDados: tsDados,
+            tsMasterData: salvarTsMasterData(),
+            tsSemanaBase: tsSemanaBase ? chaveSemanaISO(tsSemanaBase) : null,
+            tecnicos: capturarTecnicos(),
+            idiomaAtual: idiomaAtual
+        };
+    }
+
+    function tituloRelatorioAtual() {
+        if (moduloAtual === 'blade') {
+            return masterData.aeronave || masterData.turbineNo || masterData.customer || defeitoSelecionado || 'Blade Repair (sem título)';
+        }
+        if (moduloAtual === 'timesheet') {
+            const semana = tsSemanaBase ? formatarDataCurta(tsSemanaBase) : '';
+            return 'TimeSheet' + (semana ? ' - semana ' + semana : '');
+        }
+        return 'Relatório';
+    }
+
+    // Envia para o Drive qualquer foto ainda em base64 dentro de relatorioAtual (Blade),
+    // substituindo pelo link do Drive para não sobrecarregar a planilha.
+    async function persistirFotosNoDrive() {
+        if (moduloAtual !== 'blade' || !relatorioIdAtual) return;
+        const token = getTokenDaURL();
+
+        async function processarArray(arr) {
+            if (!arr || !arr.length) return;
+            for (let i = 0; i < arr.length; i++) {
+                if (typeof arr[i] === 'string' && arr[i].indexOf('data:') === 0) {
+                    try {
+                        const resp = await fetch(REPORTFLOW_API_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            body: JSON.stringify({
+                                acao: 'uploadFoto',
+                                token: token,
+                                empresaId: empresaIdAtual,
+                                relatorioId: relatorioIdAtual,
+                                imagemBase64: arr[i],
+                                nomeArquivo: `foto_${Date.now()}_${i}.jpg`
+                            })
+                        });
+                        const r = await resp.json();
+                        if (r.success) arr[i] = r.url;
+                    } catch (e) {
+                        console.error('Erro ao enviar foto para o Drive:', e);
+                    }
+                }
+            }
+        }
+
+        const etapas = (relatorioAtual.etapas || []).filter(Boolean);
+        for (const etapa of etapas) {
+            await processarArray(etapa.imagens);
+            await processarArray(etapa.imagensTemp);
+            await processarArray(etapa.imagensUmidade);
+        }
+    }
+
+    // ==========================================
+    // AUTOSAVE - SALVAR PROGRESSO NO BACKEND
+    // ==========================================
+    async function salvarProgressoAPI(status) {
+        if (!podeEditar()) return;
+        if (moduloAtual !== 'blade' && moduloAtual !== 'timesheet') return;
+        const token = getTokenDaURL();
+        if (!token) return;
+
+        try {
+            if (moduloAtual === 'blade' && relatorioIdAtual) {
+                await persistirFotosNoDrive();
+            }
+
+            const dadosEstado = moduloAtual === 'blade' ? capturarEstadoBlade() : capturarEstadoTimesheet();
+
+            const response = await fetch(REPORTFLOW_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    acao: 'salvarProgresso',
+                    token: token,
+                    empresaId: empresaIdAtual,
+                    relatorio: {
+                        id: relatorioIdAtual,
+                        modulo: moduloAtual,
+                        titulo: tituloRelatorioAtual(),
+                        status: status || 'em_processo',
+                        dados: dadosEstado
+                    }
+                })
+            });
+            const resultado = await response.json();
+            if (resultado.success) {
+                relatorioIdAtual = resultado.id;
+            }
+        } catch (e) {
+            console.error('Erro ao salvar progresso:', e);
+        }
+    }
+
+    // ==========================================
+    // RESTAURAR RELATÓRIO SALVO (BOTÃO "CONTINUAR")
+    // ==========================================
+    function restaurarRelatorio(relatorio) {
+        relatorioIdAtual = relatorio.id;
+        moduloAtual = relatorio.modulo;
+        const dados = relatorio.dados || {};
+
+        document.getElementById('painelInicial').classList.add('oculto');
+        document.getElementById('equipeArea').classList.add('oculto');
+        document.getElementById('menuPrincipal').classList.add('oculto');
+        document.querySelectorAll('.pagina').forEach(p => p.classList.remove('ativa'));
+
+        if (relatorio.modulo === 'blade') {
+            document.getElementById('paginaBlade').classList.add('ativa');
+            atualizarSubtitulo('blade');
+
+            masterData = dados.masterData || {};
+            tipoReparo = dados.tipoReparo || '';
+            defeitoSelecionado = dados.defeitoSelecionado || '';
+            relatorioAtual = dados.relatorioAtual || { defeito: '', etapas: [], imagens: {} };
+            window.dadosTecnicos = dados.tecnicos || [];
+
+            renderizarMasterData();
+            camposMasterData.forEach(campo => {
+                const el = document.getElementById(`md_${campo.id}`);
+                if (el && masterData[campo.id] !== undefined) el.value = masterData[campo.id];
+            });
+            (dados.tecnicos || []).forEach((tec, i) => {
+                const nomeEl = document.getElementById(`tecnico${i + 1}_nome`);
+                const funcaoEl = document.getElementById(`tecnico${i + 1}_funcao`);
+                if (nomeEl) nomeEl.value = tec.nome || '';
+                if (funcaoEl) funcaoEl.value = tec.funcao || '';
+            });
+
+            if (!defeitoSelecionado) {
+                // Ainda estava preenchendo os dados iniciais / dano
+                document.getElementById('nivel0').classList.add('hidden');
+                document.getElementById('nivel2').classList.remove('hidden');
+                document.getElementById('nivel3').classList.add('hidden');
+                document.getElementById('danoDescricao').value = dados.danoDescricao || '';
+                document.getElementById('danoZi').value = dados.danoZi || '';
+                document.getElementById('danoZf').value = dados.danoZf || '';
+                atualizarBotoesTipoReparo();
+                return;
+            }
+
+            document.getElementById('nivel0').classList.add('hidden');
+            document.getElementById('nivel2').classList.add('hidden');
+            document.getElementById('nivel3').classList.remove('hidden');
+
+            if (relatorioAtual.generico) {
+                renderizarWizardGenerico();
+            } else {
+                // Repopula imagensTemp a partir das etapas já salvas, para as miniaturas
+                // aparecerem normalmente ao navegar entre etapas já preenchidas.
+                imagensTemp = {};
+                (relatorioAtual.etapas || []).forEach((etapaSalva, i) => {
+                    if (!etapaSalva) return;
+                    if (etapaSalva.imagens) imagensTemp[i] = etapaSalva.imagens;
+                    if (etapaSalva.imagensTemp) imagensTemp[`${i}_temp`] = etapaSalva.imagensTemp;
+                    if (etapaSalva.imagensUmidade) imagensTemp[`${i}_umidade`] = etapaSalva.imagensUmidade;
+                });
+                const etapas = filtrarEtapas(defeitoSelecionado);
+                renderizarEtapa(etapas, 0);
+            }
+        } else if (relatorio.modulo === 'timesheet') {
+            document.getElementById('paginaTimesheet').classList.add('ativa');
+            atualizarSubtitulo('timesheet');
+
+            (dados.tecnicos || []).forEach((tec, i) => {
+                const nomeEl = document.getElementById(`tecnico${i + 1}_nome`);
+                if (nomeEl) nomeEl.value = tec.nome || '';
+            });
+
+            tsDados = dados.tsDados || {};
+            abrirTimesheet();
+
+            if (dados.tsMasterData) {
+                Object.keys(dados.tsMasterData).forEach(id => {
+                    const el = document.getElementById(`ts_md_${id}`);
+                    if (el) el.value = dados.tsMasterData[id];
+                });
+            }
+            if (dados.tsSemanaBase) {
+                tsSemanaBase = new Date(dados.tsSemanaBase + 'T00:00:00');
+                renderizarTimesheet();
+            }
+        }
+    }
+
+    // ==========================================
+    // IDIOMA DA INTERFACE (PT / EN / ES)
+    // Observação: o relatório final impresso é SEMPRE gerado em inglês,
+    // independentemente do idioma escolhido aqui na interface.
+    // ==========================================
+    // escapeHtml() agora vem do shared.js (carregado no <head>)
+
+    let idiomaAtual = localStorage.getItem('flowsuite_idioma') || 'pt';
+
+    const I18N = {
+        pt: {
+            tecnicosLabel: 'Técnico',
+            nomeLabel: 'Nome',
+            funcaoLabel: 'Função',
+            tecnico1Placeholder: 'Nome do Técnico 1',
+            tecnico2Placeholder: 'Nome do Técnico 2',
+            tecnico3Placeholder: 'Nome do Técnico 3',
+            idiomaLabel: 'Idioma',
+            menuBlade: 'Blade Repair',
+            menuBalanceamento: 'Balanceamento',
+            menuTimesheet: 'TimeSheet',
+            dadosServicoTitulo: 'Dados do Serviço',
+            continuarBtn: 'Continuar →',
+            reparosInternos: 'Reparos Internos',
+            reparosExternos: 'Reparos Externos',
+            danoTitulo: 'Dano',
+            danoDescricaoTexto: 'Descreva exatamente o tipo de dano e sua localização. Incluir detalhes entre WEB, LE/TE, DW/UW, TIP e Root.',
+            alertCamposObrigatorios: 'Preencha todos os campos obrigatórios (*)',
+            confirmVoltarInicio: 'Tem certeza que deseja sair?',
+            inicioBtn: 'Início',
+            meusRelatorios: 'Meus Relatórios',
+            novoRelatorioBtn: 'Novo Relatório',
+            carregandoRelatorios: 'Carregando relatórios...',
+            emProcesso: 'Em Processo',
+            concluidos: 'Concluídos',
+            continuarRelatorioBtn: '▶Continuar',
+            verPdfBtn: 'Ver PDF',
+            excluirBtn: 'Excluir',
+            nenhumRelatorioEmProcesso: 'Nenhum relatório em processo ainda.',
+            nenhumRelatorioConcluido: 'Nenhum relatório concluído ainda.',
+            atualizadoEm: 'Atualizado em {data}',
+            erroAoCarregar: 'Erro ao carregar: {erro}',
+            erroAoCarregarRelatorios: 'Erro ao carregar relatórios.',
+            alertDescrevaDano: 'Descreva o dano antes de continuar.',
+            alertSelecioneTipoReparo: 'Selecione o tipo de reparo (Interno ou Externo).',
+            modalOkBtn: 'Sim, voltar',
+            modalCancelarBtn: 'Cancelar',
+            alertNenhumaEtapa: 'Nenhuma etapa definida para este defeito.',
+            etapaContagem: 'Etapa {i} de {n}',
+            anteriorBtn: '← Anterior',
+            proximoBtn: 'Próximo →',
+            minFotos: 'Mín: {n} foto(s)',
+            temperaturaTitulo: 'Temperatura',
+            valorLabel: 'Valor',
+            fotoTemperaturaLabel: 'Foto da Temperatura (mín 1)',
+            umidadeTitulo: 'Umidade',
+            fotoUmidadeLabel: 'Foto da Umidade (mín 1)',
+            observacoesLabel: 'Observações (opcional)',
+            placeholderObservacoes: 'Descreva os detalhes desta etapa (opcional)...',
+            tipoCamadaLabel: 'Tipo de Camada',
+            selecioneOption: 'Selecione...',
+            avisoCamadaOpcional: 'Se preencher esta camada, o tipo é obrigatório',
+            adicionarFotosLabel: 'Adicionar fotos (mínimo {n})',
+            fotosAnexadasLabel: 'Fotos anexadas:',
+            fotosStatusLabel: 'Fotos:',
+            confirmRemoverFoto: 'Deseja remover esta foto?',
+            alertFotoMinima: 'A etapa "{label}" requer no mínimo {n} foto(s).\n Atualmente: {atual} foto(s).',
+            confirmFotoOpcional: 'Esta etapa requer {n} foto(s) se preenchida.\n Atualmente: {atual} foto(s).\n\nDeseja continuar mesmo assim?',
+            alertTempUmidadeObrigatorio: 'Para "{label}" preencha tanto Temperatura quanto Umidade.',
+            alertFotoTemperatura: 'Para "{label}" adicione pelo menos 1 foto da Temperatura.',
+            alertFotoUmidade: 'Para "{label}" adicione pelo menos 1 foto da Umidade.',
+            alertCamadaObrigatoria: 'A camada {n} é obrigatória. Selecione o tipo de camada.',
+            alertCamadaSemTipo: 'Você preencheu observações para a camada {n}, mas não selecionou o tipo.\n\nSelecione o tipo de camada ou remova as observações.',
+            materiaisEquipTitulo: 'Materiais e Equipamentos',
+            materiaisEquipSubtitulo: 'Preencha os materiais químicos utilizados e os equipamentos empregados',
+            finalizarBtn: 'Finalizar',
+            materiaisQuimicosLabel: 'Materiais Químicos',
+            materialColuna: 'Material',
+            validadeColuna: 'Data de Validade',
+            equipamentosLabel: 'Equipamentos',
+            equipamentoColuna: 'Equipamento',
+            codigoColuna: 'Código',
+            calibracaoColuna: 'Data Calibração',
+            nomeEquipamentoPlaceholder: 'Nome do equipamento',
+            codigoPlaceholder: 'Código',
+            editarBtn: 'Editar',
+            gerarRelatorioBtn: 'Gerar Relatório',
+            alertRelatorioGerado: 'Relatório gerado com sucesso!',
+            tsPageTitulo: 'TimeSheet Semanal',
+            tsSemanaAnterior: 'Semana anterior',
+            tsSemanaProxima: 'Próxima semana',
+            tsTecnicoLabel: 'Técnico',
+            tsTecnicoNaoInformado: 'Técnico não informado',
+            tsAtividadePlaceholder: 'Atividade/Projeto',
+            tsDiaColuna: 'Dia',
+            tsAtividadeColuna: 'Atividade/Projeto',
+            tsInicioColuna: 'Início',
+            tsFimColuna: 'Fim',
+            tsIntervaloColuna: 'Interv.',
+            tsHorasColuna: 'Horas',
+            tsExtraColuna: 'Extra',
+            tsTotalSemana: 'Total da semana',
+            tsSeg: 'Seg', tsTer: 'Ter', tsQua: 'Qua', tsQui: 'Qui', tsSex: 'Sex', tsSab: 'Sáb', tsDom: 'Dom',
+            tsAssinaturaTecnico: 'Assinatura do Técnico',
+            tsAssinaturaCliente: 'Assinatura do Cliente/Responsável',
+            tsDataLabel: 'Data',
+            tsStandbyColuna: 'Standby (min)',
+            subtituloBlade: 'Relatório de Reparo de Pá',
+            subtituloBalanceamento: 'Relatório de Balanceamento',
+            subtituloTimesheet: 'TimeSheet',
+            genericoModoTitulo: 'Modo Genérico',
+            genericoModoDescricao: 'Para atividades singulares, crie um fluxo de trabalho personalizado. Adicione templates ao relatório e defina livremente o nome de cada etapa.',
+            etapaNumeroLabel: 'Etapa {n}',
+            etapaNomePlaceholder: 'Digite o nome da etapa...',
+            etapaObservacoesPlaceholder: 'Observações (opcional)...',
+            fotosMinSePreenchidaLabel: '(mín 2 se preenchida)',
+            adicionarEtapaBtn: 'Adicionar etapa',
+            confirmRemoverEtapa: 'Remover esta etapa?',
+            alertEtapasSemFotos: 'As seguintes etapas têm nome ou observações, mas precisam de pelo menos 2 fotos:\n\n{nomes}\n\n Adicione 2 fotos em cada etapa.',
+            etapaSemNomeLabel: 'Etapa sem nome',
+            dashboardBtn: 'Dashboard',
+            dashboardTitulo: 'Dashboard - TimeSheet',
+            dashboardFecharBtn: 'Fechar',
+            dashboardGrafico1Titulo: 'Horas Trabalhadas x Standby (por dia)',
+            dashboardGrafico2Titulo: 'Acumulado da Semana: Horas Normais x Extras',
+            dashboardGrafico3Titulo: 'Acumulado Semanal: Horas x Standby',
+            dashboardGrafico4Titulo: 'Distribuição Total: Normais x Extras x Standby',
+            confirmIncluirDashboard: 'Deseja inserir o Dashboard na impressão?',
+            dashboardHorasTrabalhadas: 'Horas Trabalhadas',
+            dashboardStandby: 'Standby',
+            dashboardHorasNormais: 'Horas Normais',
+            dashboardHorasExtras: 'Horas Extras',
+        },
+        en: {
+            tecnicosLabel: 'Technician',
+            nomeLabel: 'Name',
+            funcaoLabel: 'Role',
+            tecnico1Placeholder: 'Technician 1 Name',
+            tecnico2Placeholder: 'Technician 2 Name',
+            tecnico3Placeholder: 'Technician 3 Name',
+            idiomaLabel: 'Language',
+            menuBlade: 'Blade Repair',
+            menuBalanceamento: 'Balancing',
+            menuTimesheet: 'TimeSheet',
+            dadosServicoTitulo: 'Service Data',
+            continuarBtn: 'Continue →',
+            reparosInternos: 'Internal Repairs',
+            reparosExternos: 'External Repairs',
+            danoTitulo: 'Damage',
+            danoDescricaoTexto: 'Describe exactly the type of damage and its location. Include details between WEB, LE/TE, DW/UW, TIP and Root.',
+            alertCamposObrigatorios: 'Please fill in all required fields (*)',
+            confirmVoltarInicio: 'Are you sure you want to leave?',
+            inicioBtn: 'Home',
+            meusRelatorios: 'My Reports',
+            novoRelatorioBtn: 'New Report',
+            carregandoRelatorios: 'Loading reports...',
+            emProcesso: 'In Progress',
+            concluidos: 'Completed',
+            continuarRelatorioBtn: '▶Continue',
+            verPdfBtn: 'View PDF',
+            excluirBtn: 'Delete',
+            nenhumRelatorioEmProcesso: 'No reports in progress yet.',
+            nenhumRelatorioConcluido: 'No completed reports yet.',
+            atualizadoEm: 'Updated on {data}',
+            erroAoCarregar: 'Error loading: {erro}',
+            erroAoCarregarRelatorios: 'Error loading reports.',
+            alertDescrevaDano: 'Describe the damage before continuing.',
+            alertSelecioneTipoReparo: 'Select the repair type (Internal or External).',
+            modalOkBtn: 'Yes, go back',
+            modalCancelarBtn: 'Cancel',
+            alertNenhumaEtapa: 'No steps defined for this damage.',
+            etapaContagem: 'Step {i} of {n}',
+            anteriorBtn: '← Previous',
+            proximoBtn: 'Next →',
+            minFotos: 'Min: {n} photo(s)',
+            temperaturaTitulo: 'Temperature',
+            valorLabel: 'Value',
+            fotoTemperaturaLabel: 'Temperature Photo (min 1)',
+            umidadeTitulo: 'Humidity',
+            fotoUmidadeLabel: 'Humidity Photo (min 1)',
+            observacoesLabel: 'Notes (optional)',
+            placeholderObservacoes: 'Describe the details of this step (optional)...',
+            tipoCamadaLabel: 'Layer Type',
+            selecioneOption: 'Select...',
+            avisoCamadaOpcional: 'If you fill in this layer, the type is required',
+            adicionarFotosLabel: 'Add photos (minimum {n})',
+            fotosAnexadasLabel: 'Photos attached:',
+            fotosStatusLabel: 'Photos:',
+            confirmRemoverFoto: 'Do you want to remove this photo?',
+            alertFotoMinima: 'The step "{label}" requires at least {n} photo(s).\n Currently: {atual} photo(s).',
+            confirmFotoOpcional: 'This step requires {n} photo(s) if filled in.\n Currently: {atual} photo(s).\n\nDo you want to continue anyway?',
+            alertTempUmidadeObrigatorio: 'For "{label}" fill in both Temperature and Humidity.',
+            alertFotoTemperatura: 'For "{label}" add at least 1 Temperature photo.',
+            alertFotoUmidade: 'For "{label}" add at least 1 Humidity photo.',
+            alertCamadaObrigatoria: 'Layer {n} is required. Select the layer type.',
+            alertCamadaSemTipo: 'You filled in notes for layer {n}, but did not select the type.\n\nSelect the layer type or remove the notes.',
+            materiaisEquipTitulo: 'Materials and Equipment',
+            materiaisEquipSubtitulo: 'Fill in the chemical materials used and the equipment employed',
+            finalizarBtn: 'Finish',
+            materiaisQuimicosLabel: 'Chemical Materials',
+            materialColuna: 'Material',
+            validadeColuna: 'Expiry Date',
+            equipamentosLabel: 'Equipment',
+            equipamentoColuna: 'Equipment',
+            codigoColuna: 'Code',
+            calibracaoColuna: 'Calibration Date',
+            nomeEquipamentoPlaceholder: 'Equipment name',
+            codigoPlaceholder: 'Code',
+            editarBtn: 'Edit',
+            gerarRelatorioBtn: 'Generate Report',
+            alertRelatorioGerado: 'Report generated successfully!',
+            tsPageTitulo: 'Weekly TimeSheet',
+            tsSemanaAnterior: 'Previous week',
+            tsSemanaProxima: 'Next week',
+            tsTecnicoLabel: 'Technician',
+            tsTecnicoNaoInformado: 'Technician not provided',
+            tsAtividadePlaceholder: 'Activity/Project',
+            tsDiaColuna: 'Day',
+            tsAtividadeColuna: 'Activity/Project',
+            tsInicioColuna: 'Start',
+            tsFimColuna: 'End',
+            tsIntervaloColuna: 'Break',
+            tsHorasColuna: 'Hours',
+            tsExtraColuna: 'Overtime',
+            tsTotalSemana: 'Week total',
+            tsSeg: 'Mon', tsTer: 'Tue', tsQua: 'Wed', tsQui: 'Thu', tsSex: 'Fri', tsSab: 'Sat', tsDom: 'Sun',
+            tsAssinaturaTecnico: 'Technician Signature',
+            tsAssinaturaCliente: 'Customer/Responsible Signature',
+            tsDataLabel: 'Date',
+            tsStandbyColuna: 'Standby (min)',
+            subtituloBlade: 'Blade Repair Report',
+            subtituloBalanceamento: 'Balance Report',
+            subtituloTimesheet: 'TimeSheet',
+            genericoModoTitulo: 'Custom Mode',
+            genericoModoDescricao: 'For one-off activities, build a custom workflow. Add steps to the report and freely define the name of each one.',
+            etapaNumeroLabel: 'Step {n}',
+            etapaNomePlaceholder: 'Enter the step name...',
+            etapaObservacoesPlaceholder: 'Notes (optional)...',
+            fotosMinSePreenchidaLabel: '(min 2 if filled in)',
+            adicionarEtapaBtn: 'Add step',
+            confirmRemoverEtapa: 'Remove this step?',
+            alertEtapasSemFotos: 'The following steps have a name or notes, but need at least 2 photos:\n\n{nomes}\n\n Add 2 photos to each step.',
+            etapaSemNomeLabel: 'Unnamed step',
+            dashboardBtn: 'Dashboard',
+            dashboardTitulo: 'Dashboard - TimeSheet',
+            dashboardFecharBtn: 'Close',
+            dashboardGrafico1Titulo: 'Hours Worked x Standby (per day)',
+            dashboardGrafico2Titulo: 'Week Total: Regular Hours x Overtime',
+            dashboardGrafico3Titulo: 'Weekly Cumulative: Hours x Standby',
+            dashboardGrafico4Titulo: 'Total Breakdown: Regular x Overtime x Standby',
+            confirmIncluirDashboard: 'Do you want to include the Dashboard in the printout?',
+            dashboardHorasTrabalhadas: 'Hours Worked',
+            dashboardStandby: 'Standby',
+            dashboardHorasNormais: 'Regular Hours',
+            dashboardHorasExtras: 'Overtime',
+        },
+        es: {
+            tecnicosLabel: 'Técnico',
+            nomeLabel: 'Nombre',
+            funcaoLabel: 'Función',
+            tecnico1Placeholder: 'Nombre del Técnico 1',
+            tecnico2Placeholder: 'Nombre del Técnico 2',
+            tecnico3Placeholder: 'Nombre del Técnico 3',
+            idiomaLabel: 'Idioma',
+            menuBlade: 'Blade Repair',
+            menuBalanceamento: 'Balanceo',
+            menuTimesheet: 'TimeSheet',
+            dadosServicoTitulo: 'Datos del Servicio',
+            continuarBtn: 'Continuar →',
+            reparosInternos: 'Reparaciones Internas',
+            reparosExternos: 'Reparaciones Externas',
+            danoTitulo: 'Daño',
+            danoDescricaoTexto: 'Describa exactamente el tipo de daño y su ubicación. Incluya detalles entre WEB, LE/TE, DW/UW, TIP y Root.',
+            alertCamposObrigatorios: 'Complete todos los campos obligatorios (*)',
+            confirmVoltarInicio: '¿Está seguro de que desea salir?',
+            inicioBtn: 'Inicio',
+            meusRelatorios: 'Mis Informes',
+            novoRelatorioBtn: 'Nuevo Informe',
+            carregandoRelatorios: 'Cargando informes...',
+            emProcesso: 'En Proceso',
+            concluidos: 'Completados',
+            continuarRelatorioBtn: '▶Continuar',
+            verPdfBtn: 'Ver PDF',
+            excluirBtn: 'Eliminar',
+            nenhumRelatorioEmProcesso: 'Aún no hay informes en proceso.',
+            nenhumRelatorioConcluido: 'Aún no hay informes completados.',
+            atualizadoEm: 'Actualizado el {data}',
+            erroAoCarregar: 'Error al cargar: {erro}',
+            erroAoCarregarRelatorios: 'Error al cargar los informes.',
+            alertDescrevaDano: 'Describa el daño antes de continuar.',
+            alertSelecioneTipoReparo: 'Seleccione el tipo de reparación (Interna o Externa).',
+            modalOkBtn: 'Sí, volver',
+            modalCancelarBtn: 'Cancelar',
+            alertNenhumaEtapa: 'No hay etapas definidas para este daño.',
+            etapaContagem: 'Paso {i} de {n}',
+            anteriorBtn: '← Anterior',
+            proximoBtn: 'Siguiente →',
+            minFotos: 'Mín: {n} foto(s)',
+            temperaturaTitulo: 'Temperatura',
+            valorLabel: 'Valor',
+            fotoTemperaturaLabel: 'Foto de Temperatura (mín 1)',
+            umidadeTitulo: 'Humedad',
+            fotoUmidadeLabel: 'Foto de Humedad (mín 1)',
+            observacoesLabel: 'Observaciones (opcional)',
+            placeholderObservacoes: 'Describa los detalles de esta etapa (opcional)...',
+            tipoCamadaLabel: 'Tipo de Capa',
+            selecioneOption: 'Seleccione...',
+            avisoCamadaOpcional: 'Si completa esta capa, el tipo es obligatorio',
+            adicionarFotosLabel: 'Agregar fotos (mínimo {n})',
+            fotosAnexadasLabel: 'Fotos adjuntas:',
+            fotosStatusLabel: 'Fotos:',
+            confirmRemoverFoto: '¿Desea eliminar esta foto?',
+            alertFotoMinima: 'La etapa "{label}" requiere al menos {n} foto(s).\n Actualmente: {atual} foto(s).',
+            confirmFotoOpcional: 'Esta etapa requiere {n} foto(s) si se completa.\n Actualmente: {atual} foto(s).\n\n¿Desea continuar de todos modos?',
+            alertTempUmidadeObrigatorio: 'Para "{label}" complete tanto Temperatura como Humedad.',
+            alertFotoTemperatura: 'Para "{label}" agregue al menos 1 foto de Temperatura.',
+            alertFotoUmidade: 'Para "{label}" agregue al menos 1 foto de Humedad.',
+            alertCamadaObrigatoria: 'La capa {n} es obligatoria. Seleccione el tipo de capa.',
+            alertCamadaSemTipo: 'Completó observaciones para la capa {n}, pero no seleccionó el tipo.\n\nSeleccione el tipo de capa o elimine las observaciones.',
+            materiaisEquipTitulo: 'Materiales y Equipos',
+            materiaisEquipSubtitulo: 'Complete los materiales químicos utilizados y los equipos empleados',
+            finalizarBtn: 'Finalizar',
+            materiaisQuimicosLabel: 'Materiales Químicos',
+            materialColuna: 'Material',
+            validadeColuna: 'Fecha de Vencimiento',
+            equipamentosLabel: 'Equipos',
+            equipamentoColuna: 'Equipo',
+            codigoColuna: 'Código',
+            calibracaoColuna: 'Fecha de Calibración',
+            nomeEquipamentoPlaceholder: 'Nombre del equipo',
+            codigoPlaceholder: 'Código',
+            editarBtn: 'Editar',
+            gerarRelatorioBtn: 'Generar Informe',
+            alertRelatorioGerado: '¡Informe generado con éxito!',
+            tsPageTitulo: 'TimeSheet Semanal',
+            tsSemanaAnterior: 'Semana anterior',
+            tsSemanaProxima: 'Próxima semana',
+            tsTecnicoLabel: 'Técnico',
+            tsTecnicoNaoInformado: 'Técnico no informado',
+            tsAtividadePlaceholder: 'Actividad/Proyecto',
+            tsDiaColuna: 'Día',
+            tsAtividadeColuna: 'Actividad/Proyecto',
+            tsInicioColuna: 'Inicio',
+            tsFimColuna: 'Fin',
+            tsIntervaloColuna: 'Desc.',
+            tsHorasColuna: 'Horas',
+            tsExtraColuna: 'Extra',
+            tsTotalSemana: 'Total de la semana',
+            tsSeg: 'Lun', tsTer: 'Mar', tsQua: 'Mié', tsQui: 'Jue', tsSex: 'Vie', tsSab: 'Sáb', tsDom: 'Dom',
+            tsAssinaturaTecnico: 'Firma del Técnico',
+            tsAssinaturaCliente: 'Firma del Cliente/Responsable',
+            tsDataLabel: 'Fecha',
+            tsStandbyColuna: 'Standby (min)',
+            subtituloBlade: 'Informe de Reparación de Pala',
+            subtituloBalanceamento: 'Informe de Balanceo',
+            subtituloTimesheet: 'TimeSheet',
+            genericoModoTitulo: 'Modo Genérico',
+            genericoModoDescricao: 'Para actividades puntuales, cree un flujo de trabajo personalizado. Agregue etapas al informe y defina libremente el nombre de cada una.',
+            etapaNumeroLabel: 'Etapa {n}',
+            etapaNomePlaceholder: 'Escriba el nombre de la etapa...',
+            etapaObservacoesPlaceholder: 'Observaciones (opcional)...',
+            fotosMinSePreenchidaLabel: '(mín 2 si se completa)',
+            adicionarEtapaBtn: 'Agregar etapa',
+            confirmRemoverEtapa: '¿Eliminar esta etapa?',
+            alertEtapasSemFotos: 'Las siguientes etapas tienen nombre u observaciones, pero necesitan al menos 2 fotos:\n\n{nomes}\n\n Agregue 2 fotos en cada etapa.',
+            etapaSemNomeLabel: 'Etapa sin nombre',
+            dashboardBtn: 'Dashboard',
+            dashboardTitulo: 'Dashboard - TimeSheet',
+            dashboardFecharBtn: 'Cerrar',
+            dashboardGrafico1Titulo: 'Horas Trabajadas x Standby (por día)',
+            dashboardGrafico2Titulo: 'Acumulado de la Semana: Horas Normales x Extras',
+            dashboardGrafico3Titulo: 'Acumulado Semanal: Horas x Standby',
+            dashboardGrafico4Titulo: 'Distribución Total: Normales x Extras x Standby',
+            confirmIncluirDashboard: '¿Desea incluir el Dashboard en la impresión?',
+            dashboardHorasTrabalhadas: 'Horas Trabajadas',
+            dashboardStandby: 'Standby',
+            dashboardHorasNormais: 'Horas Normales',
+            dashboardHorasExtras: 'Horas Extras',
+        }
+    };
+
+    // t(), tf() e aplicarIdioma() agora vêm do shared.js (usam I18N e idiomaAtual daqui)
+
+    // Retorna o texto de exibição da etapa conforme o idioma da interface.
+    // etapa.label (inglês) é o texto canônico usado no relatório final impresso.
+    function etapaLabel(etapa) {
+        if (idiomaAtual === 'pt') return etapa.labelPt || etapa.label;
+        if (idiomaAtual === 'es') return etapa.labelEs || etapa.label;
+        return etapa.label;
+    }
+
+    function mudarIdioma(lang) {
+        idiomaAtual = lang;
+        const valoresAtuais = {};
+        camposMasterData.forEach(campo => {
+            const el = document.getElementById(`md_${campo.id}`);
+            if (el) valoresAtuais[campo.id] = el.value;
+        });
+        aplicarIdioma();
+        renderizarMasterData();
+        camposMasterData.forEach(campo => {
+            const el = document.getElementById(`md_${campo.id}`);
+            if (el && valoresAtuais[campo.id]) el.value = valoresAtuais[campo.id];
+        });
+    }
+
+    // ==========================================
+    // DADOS DO MASTER DATA (12 campos)
+    // labelPt/labelEs/labelEn = texto exibido na tela conforme idioma.
+    // "label" continua sendo o texto oficial em inglês, usado no relatório final impresso.
+    // ==========================================
+    const camposMasterData = [
+        { id: 'customer', label: 'Customer', labelPt: 'Cliente', labelEs: 'Cliente', tipo: 'text', obrigatorio: true },
+        { id: 'bladeType', label: 'Blade Type', labelPt: 'Tipo de Pá', labelEs: 'Tipo de Pala', tipo: 'text', obrigatorio: true },
+        { id: 'bladeSetNo', label: 'Blade set no.', labelPt: 'Nº do Set da Pá', labelEs: 'N.º de Set de Pala', tipo: 'text', obrigatorio: true },
+        { id: 'site', label: 'Site', labelPt: 'Site', labelEs: 'Sitio', tipo: 'text', obrigatorio: true },
+        { id: 'regionCountry', label: 'Region - Country', labelPt: 'Região - País', labelEs: 'Región - País', tipo: 'text', obrigatorio: true },
+        { id: 'turbineNo', label: 'Turbine No', labelPt: 'Nº da Turbina', labelEs: 'N.º de Turbina', tipo: 'text', obrigatorio: true },
+        { id: 'poNo', label: 'PO No', labelPt: 'Nº do Pedido (PO)', labelEs: 'N.º de Pedido (PO)', tipo: 'text', obrigatorio: false },
+        { id: 'dateWorkCompleted', label: 'Date of work completed', labelPt: 'Data de conclusão do serviço', labelEs: 'Fecha de finalización del trabajo', tipo: 'date', obrigatorio: true },
+        { id: 'customerOnSite', label: 'Customer on site', labelPt: 'Cliente no local', labelEs: 'Cliente en el sitio', tipo: 'text', obrigatorio: false },
+        { id: 'otherPersons', label: 'Other persons on site', labelPt: 'Outras pessoas no local', labelEs: 'Otras personas en el sitio', tipo: 'text', obrigatorio: false },
+        { id: 'siteContact', label: 'Site Contact', labelPt: 'Contato do Site', labelEs: 'Contacto del sitio', tipo: 'text', obrigatorio: false },
+        { id: 'reportIssuedDate', label: 'Report Issued Date', labelPt: 'Data de emissão do relatório', labelEs: 'Fecha de emisión del informe', tipo: 'date', obrigatorio: true }
+    ];
+
+    // ==========================================
+    // DADOS DOS DEFEITOS
+    // ==========================================
+    const defeitosInternos = [
+        'Trinca na linha de colagem',
+        'Cola sem cura',
+        'Falha de colagem Bordos/ Almas',
+        'LPS Receptor / Lightning System',
+        'Trincas no laminado',
+        'Trinca no Bordo (LE/TE)',
+        'Linha de corte do TE',
+        'Delaminado',
+        'Trinca no Core',
+        'Bolha de ar no laminado',
+        'Gap entre núcleos (Core)',
+        'Tecido seco',
+        'Corpo estranho no laminado',
+        'Rugas no laminado',
+        'Furos no laminado'
+    ];
+
+    const defeitosExternos = ['Em desenvolvimento...'];
+
+    // ==========================================
+    // LISTA DE MATERIAIS QUÍMICOS (dropdown da tabela de materiais)
+    // ==========================================
+    const listaMateriaisQuimicos = [
+        'Resina Epoxi',
+        'Catalisador (Epox)',
+        'Resina Polyester',
+        'Peroxido',
+        'Massa Epoxi',
+        'Catalisador Massa (Epox)',
+        'Cola',
+        'Peroxido (Cola)'
+    ];
+    const TOTAL_LINHAS_MATERIAIS = 4;
+    const TOTAL_LINHAS_EQUIPAMENTOS = 4;
+
+// ==========================================
+// ETAPAS COMPLETAS COM MINIMO DE FOTOS
+// ==========================================
+const todasEtapas = [
+    { id: 'inspecaoPreliminarGelcoat', label: 'Preliminary Inspection (with GelCoat)', labelPt: 'Inspeção preliminar (com GelCoat)', labelEs: 'Inspección preliminar (con GelCoat)', obrigatorio: true, fotosMin: 2, tipos: ['externo'] },
+    { id: 'inspecao', label: 'Inspection', labelPt: 'Inspeção', labelEs: 'Inspección', obrigatorio: true, fotosMin: 2, tipos: ['interno','externo'] },
+    { id: 'remocaoBOD', label: 'BOD removal', labelPt: 'Remoção do BOD', labelEs: 'Remoción del BOD', obrigatorio: true, fotosMin: 2, tipos: ['interno','externo'] },
+    { id: 'remocaoCore', label: 'Core Removal', labelPt: 'Remoção do Core', labelEs: 'Remoción del Core', obrigatorio: false, fotosMin: 2, tipos: ['interno','externo'] },
+    { id: 'tempUmidadeCore', label: 'Temperature/humidity for Core application', labelPt: 'Temperatura/ umidade para aplicação do Core', labelEs: 'Temperatura/humedad para aplicación del Core', obrigatorio: false, fotosMin: 1, isTempUmidade: true, tipos: ['interno','externo'] },
+    { id: 'vacuumBagCore', label: 'Vacuum Bag – Core', labelPt: 'Vacuum Bag – Core', labelEs: 'Vacuum Bag – Core', obrigatorio: false, fotosMin: 2, tipos: ['interno','externo'] },
+    { id: 'ajusteCore', label: 'Core adjustment (leveling)', labelPt: 'Ajuste do Core (nivelamento)', labelEs: 'Ajuste del Core (nivelación)', obrigatorio: false, fotosMin: 2, tipos: ['interno','externo'] },
+    { id: 'remocaoCola', label: 'Glue removal', labelPt: 'Remoção da Cola', labelEs: 'Remoción del pegamento', obrigatorio: false, fotosMin: 2, tipos: ['interno','externo'] },
+    { id: 'tempUmidadeCola', label: 'Temperature/humidity for glue application', labelPt: 'Temperatura/ umidade para aplicação da cola', labelEs: 'Temperatura/humedad para aplicación del pegamento', obrigatorio: false, fotosMin: 1, isTempUmidade: true, tipos: ['interno','externo'] },
+    { id: 'aplicacaoCola', label: 'Glue application', labelPt: 'Aplicação da cola', labelEs: 'Aplicación del pegamento', obrigatorio: false, fotosMin: 2, tipos: ['interno','externo'] },
+    { id: 'testeDurezaCola', label: 'Glue hardness test', labelPt: 'Teste de dureza da cola', labelEs: 'Prueba de dureza del pegamento', obrigatorio: false, fotosMin: 2, tipos: ['interno','externo'] },
+    { id: 'ajusteCola', label: 'Glue adjustment', labelPt: 'Ajuste da cola', labelEs: 'Ajuste del pegamento', obrigatorio: false, fotosMin: 2, tipos: ['interno','externo'] },
+    { id: 'chanfro', label: 'Chamfer/Staggering', labelPt: 'Chanfro/ Escalonamento', labelEs: 'Chaflán/Escalonado', obrigatorio: true, fotosMin: 2, tipos: ['interno','externo'] },
+    { id: 'tempUmidadeLaminacao', label: 'Temperature/humidity for lamination', labelPt: 'Temperatura/umidade para laminação', labelEs: 'Temperatura/humedad para laminación', obrigatorio: true, fotosMin: 1, isTempUmidade: true, tipos: ['interno','externo'] },
+    { id: 'sikaPrimer', label: 'Sika Primer application', labelPt: 'Aplicação do Sika Primer', labelEs: 'Aplicación de Sika Primer', obrigatorio: false, fotosMin: 1, tipos: ['interno','externo'] },
+    { id: 'laminacao1', label: 'Lamination layer 1', labelPt: 'Laminação camada 1', labelEs: 'Laminación capa 1', obrigatorio: true, fotosMin: 1, isLaminacao: true, camadaNum: 1, tipos: ['interno','externo'] },
+    { id: 'laminacao2', label: 'Lamination layer 2', labelPt: 'Laminação camada 2', labelEs: 'Laminación capa 2', obrigatorio: true, fotosMin: 1, isLaminacao: true, camadaNum: 2, tipos: ['interno','externo'] },
+    { id: 'laminacao3', label: 'Lamination layer 3', labelPt: 'Laminação camada 3', labelEs: 'Laminación capa 3', obrigatorio: false, fotosMin: 1, isLaminacao: true, camadaNum: 3, tipos: ['interno','externo'] },
+    { id: 'laminacao4', label: 'Lamination layer 4', labelPt: 'Laminação camada 4', labelEs: 'Laminación capa 4', obrigatorio: false, fotosMin: 1, isLaminacao: true, camadaNum: 4, tipos: ['interno','externo'] },
+    { id: 'laminacao5', label: 'Lamination layer 5', labelPt: 'Laminação camada 5', labelEs: 'Laminación capa 5', obrigatorio: false, fotosMin: 1, isLaminacao: true, camadaNum: 5, tipos: ['interno','externo'] },
+    { id: 'laminacao6', label: 'Lamination layer 6', labelPt: 'Laminação camada 6', labelEs: 'Laminación capa 6', obrigatorio: false, fotosMin: 1, isLaminacao: true, camadaNum: 6, tipos: ['interno','externo'] },
+    { id: 'laminadoCurado', label: 'Cured laminate', labelPt: 'Laminado curado', labelEs: 'Laminado curado', obrigatorio: true, fotosMin: 2, tipos: ['interno','externo'] },
+    { id: 'testeDureza', label: 'Hardness Test', labelPt: 'Teste de Dureza', labelEs: 'Prueba de Dureza', obrigatorio: true, fotosMin: 2, tipos: ['interno','externo'] },
+
+    // ===== ETAPAS EXCLUSIVAS DO REPARO EXTERNO (acabamento/pintura) =====
+    { id: 'preparacaoPintura', label: 'Paint Preparation', labelPt: 'Preparação para pintura', labelEs: 'Preparación para pintura', obrigatorio: true, fotosMin: 2, tipos: ['externo'] },
+    { id: 'tempUmidadeAcabamento', label: 'Temperature/humidity for finishing', labelPt: 'Temperatura e umidade para o acabamento', labelEs: 'Temperatura y humedad para el acabado', obrigatorio: true, fotosMin: 1, isTempUmidade: true, tipos: ['externo'] },
+    { id: 'aplicacaoFiller', label: 'Filler application', labelPt: 'Aplicação do filler', labelEs: 'Aplicación del filler', obrigatorio: true, fotosMin: 2, tipos: ['externo'] },
+    { id: 'gelcoat1', label: 'GelCoat application – 1st coat', labelPt: 'Aplicação 1° demão de GelCoat', labelEs: 'Aplicación 1.ª mano de GelCoat', obrigatorio: true, fotosMin: 2, tipos: ['externo'] },
+    { id: 'gelcoat2', label: 'GelCoat application – 2nd coat', labelPt: 'Aplicação 2° demão de GelCoat', labelEs: 'Aplicación 2.ª mano de GelCoat', obrigatorio: true, fotosMin: 2, tipos: ['externo'] },
+    { id: 'gelcoat3', label: 'GelCoat application – 3rd coat', labelPt: 'Aplicação 3° demão de GelCoat', labelEs: 'Aplicación 3.ª mano de GelCoat', obrigatorio: true, fotosMin: 2, tipos: ['externo'] },
+    { id: 'reparoFinalizado', label: 'Repair completed', labelPt: 'Reparo finalizado', labelEs: 'Reparación finalizada', obrigatorio: true, fotosMin: 2, tipos: ['externo'] }
+];
+    // ==========================================
+    // ESTADO GLOBAL
+    // ==========================================
+    let masterData = {};
+    let tipoReparo = '';
+    let defeitoSelecionado = '';
+    let etapaAtual = 0;
+    let relatorioAtual = { defeito: '', etapas: [], imagens: {} };
+    let imagensTemp = {};
+    let moduloAtual = '';
+
+    // Estado do TimeSheet
+    let tsSemanaBase = getSegundaFeira(new Date()); // Date = segunda-feira da semana exibida
+    let tsTecnicoAtual = 0; // índice do técnico selecionado
+    let tsDados = {}; // { "tecnicoIdx_YYYY-MM-DD": { dias: [...7], observacoes, assinaturaTecnico, assinaturaCliente } }
+
+    // ==========================================
+    // FUNÇÃO 1 - RENDERIZAR MASTER DATA
+    // ==========================================
+    function renderizarMasterData() {
+        const container = document.getElementById('masterDataContainer');
+        let html = '<div class="grid-2col">';
+        camposMasterData.forEach(campo => {
+            const obrig = campo.obrigatorio ? '<span class="obrigatorio">*</span>' : '';
+            const labelExibido = idiomaAtual === 'pt' ? campo.labelPt : (idiomaAtual === 'es' ? campo.labelEs : campo.label);
+            html += `
+                <div>
+                    <label>${labelExibido} ${obrig}</label>
+                    <input type="${campo.tipo}" id="md_${campo.id}" ${campo.obrigatorio ? 'required' : ''}>
+                </div>
+            `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    // ==========================================
+    // FUNÇÃO 2 - PROSSEGUIR MASTER DATA
+    // ==========================================
+    function prosseguirMasterData() {
+        let valid = true;
+        const dados = {};
+        camposMasterData.forEach(campo => {
+            const el = document.getElementById(`md_${campo.id}`);
+            const valor = el.value.trim();
+            if (campo.obrigatorio && !valor) {
+                valid = false;
+                el.style.borderColor = '#dc3545';
+            } else {
+                el.style.borderColor = '#ddd';
+                dados[campo.id] = valor;
+            }
+        });
+
+        if (!valid) {
+            alert(t('alertCamposObrigatorios'));
+            return;
+        }
+
+        masterData = dados;
+        document.getElementById('nivel0').classList.add('hidden');
+        document.getElementById('nivel2').classList.remove('hidden');
+        document.getElementById('danoDescricao').value = '';
+        document.getElementById('danoZi').value = '';
+        document.getElementById('danoZf').value = '';
+        tipoReparo = '';
+        atualizarBotoesTipoReparo();
+        salvarProgressoAPI('em_processo');
+    }
+
+    // ==========================================
+    // FUNÇÃO 3 - ATUALIZAR SUBTÍTULO
+    // ==========================================
+    function atualizarSubtitulo(modulo) {
+        const subtituloEl = document.getElementById('subtituloModulo');
+        const btnInicio = document.getElementById('btnInicioHeader');
+        const equipeArea = document.getElementById('equipeArea');
+        const menuPrincipal = document.getElementById('menuPrincipal');
+        
+        if (modulo === 'blade') {
+            subtituloEl.textContent = t('subtituloBlade');
+            btnInicio.classList.remove('oculto');
+            equipeArea.classList.add('oculto');
+            menuPrincipal.classList.add('oculto');
+        } else if (modulo === 'balanceamento') {
+            subtituloEl.textContent = t('subtituloBalanceamento');
+            btnInicio.classList.remove('oculto');
+            equipeArea.classList.add('oculto');
+            menuPrincipal.classList.add('oculto');
+        } else if (modulo === 'timesheet') {
+            subtituloEl.textContent = t('subtituloTimesheet');
+            btnInicio.classList.remove('oculto');
+            equipeArea.classList.add('oculto');
+            menuPrincipal.classList.add('oculto');
+        } else {
+            subtituloEl.textContent = '';
+            btnInicio.classList.add('oculto');
+            equipeArea.classList.remove('oculto');
+            menuPrincipal.classList.remove('oculto');
+        }
+    }
+
+    // ==========================================
+    // FUNÇÃO 4 - ABRIR PÁGINA
+    // ==========================================
+    function abrirPagina(pagina) {
+        document.querySelectorAll('.pagina').forEach(p => p.classList.remove('ativa'));
+        document.getElementById(`pagina${pagina.charAt(0).toUpperCase() + pagina.slice(1)}`).classList.add('ativa');
+        
+        moduloAtual = pagina;
+        atualizarSubtitulo(pagina);
+        
+        if (pagina === 'blade') {
+            resetarBlade();
+            renderizarMasterData();
+        }
+        if (pagina === 'timesheet') {
+            abrirTimesheet();
+        }
+    }
+
+    // ==========================================
+    // TIMESHEET - FUNÇÕES AUXILIARES DE DATA
+    // ==========================================
+    function getSegundaFeira(data) {
+        const d = new Date(data);
+        const dia = d.getDay(); // 0 = domingo
+        const diff = dia === 0 ? -6 : 1 - dia;
+        d.setDate(d.getDate() + diff);
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }
+
+    function formatarDataCurta(data) {
+        const dd = String(data.getDate()).padStart(2, '0');
+        const mm = String(data.getMonth() + 1).padStart(2, '0');
+        return `${dd}/${mm}`;
+    }
+
+    function chaveSemanaISO(data) {
+        const yyyy = data.getFullYear();
+        const mm = String(data.getMonth() + 1).padStart(2, '0');
+        const dd = String(data.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    // ==========================================
+    // TIMESHEET - ABRIR / INICIALIZAR
+    // ==========================================
+    function abrirTimesheet() {
+        // Renderiza dados do cliente
+        renderizarTsMasterData();
+        
+        tsSemanaBase = getSegundaFeira(new Date());
+
+        // Captura técnicos preenchidos na tela inicial
+        const tecnicos = [];
+        for (let i = 1; i <= 3; i++) {
+            const nome = document.getElementById(`tecnico${i}_nome`)?.value.trim() || '';
+            if (nome) tecnicos.push(nome);
+        }
+        if (tecnicos.length === 0) tecnicos.push(t('tsTecnicoNaoInformado'));
+
+        const select = document.getElementById('tsTecnicoSelect');
+        select.innerHTML = tecnicos.map((nome, i) => `<option value="${i}">${nome}</option>`).join('');
+        tsTecnicoAtual = 0;
+
+        renderizarTimesheet();
+    }
+
+    // ==========================================
+    // TIMESHEET - DADOS DO CLIENTE
+    // ==========================================
+    function renderizarTsMasterData() {
+        const container = document.getElementById('tsMasterData');
+        let html = '<div class="grid-2col">';
+        
+        // Usa os mesmos campos do masterData, mas apenas os principais
+        const camposTs = ['customer', 'site', 'regionCountry', 'turbineNo', 'bladeSetNo'];
+        
+        camposMasterData.forEach(campo => {
+            if (!camposTs.includes(campo.id)) return;
+            
+            // Troca o label de "Blade Type" para "N° da Pá" apenas para o campo bladeSetNo
+            let labelExibido = idiomaAtual === 'pt' ? campo.labelPt : (idiomaAtual === 'es' ? campo.labelEs : campo.label);
+            if (campo.id === 'bladeSetNo') {
+                labelExibido = idiomaAtual === 'pt' ? 'N° da Pá' : (idiomaAtual === 'es' ? 'N° de Pala' : 'Blade No.');
+            }
+            
+            html += `
+                <div>
+                    <label>${labelExibido}</label>
+                    <input type="${campo.tipo}" id="ts_md_${campo.id}" ${campo.obrigatorio ? 'required' : ''}>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    // ==========================================
+    // TIMESHEET - SALVAR DADOS DO CLIENTE
+    // ==========================================
+    function salvarTsMasterData() {
+        const dados = {};
+        const camposTs = ['customer', 'site', 'regionCountry', 'turbineNo', 'bladeType', 'bladeSetNo'];
+        camposMasterData.forEach(campo => {
+            if (!camposTs.includes(campo.id)) return;
+            const el = document.getElementById(`ts_md_${campo.id}`);
+            if (el) dados[campo.id] = el.value.trim();
+        });
+        return dados;
+    }
+
+    function mudarSemanaTimesheet(direcao) {
+        tsSemanaBase.setDate(tsSemanaBase.getDate() + (direcao * 7));
+        renderizarTimesheet();
+        salvarProgressoAPI('em_processo');
+    }
+
+    function chaveAtual() {
+        tsTecnicoAtual = parseInt(document.getElementById('tsTecnicoSelect').value || 0);
+        return `${tsTecnicoAtual}_${chaveSemanaISO(tsSemanaBase)}`;
+    }
+
+        function dadosSemanaAtual() {
+        const chave = chaveAtual();
+        if (!tsDados[chave]) {
+            tsDados[chave] = {
+                dias: Array.from({ length: 7 }, () => ({ atividade: '', inicio: '', fim: '', intervalo: '', standby: '' })),
+                observacoes: '',
+                assinaturaTecnico: { nome: '', data: '' },
+                assinaturaCliente: { nome: '', data: '' }
+            };
+        }
+        return tsDados[chave];
+    }
+
+    // Calcula horas trabalhadas em decimal a partir de início/fim/intervalo(min)
+    function calcularHoras(inicio, fim, intervaloMin) {
+        if (!inicio || !fim) return 0;
+        const [h1, m1] = inicio.split(':').map(Number);
+        const [h2, m2] = fim.split(':').map(Number);
+        let minutos = (h2 * 60 + m2) - (h1 * 60 + m1);
+        if (minutos < 0) minutos += 24 * 60; // turno vira a noite
+        minutos -= (parseInt(intervaloMin) || 0);
+        return Math.max(0, minutos / 60);
+    }
+
+    // ==========================================
+    // TIMESHEET - RENDERIZAR TABELA DA SEMANA
+    // ==========================================
+    function renderizarTimesheet() {
+        const semana = dadosSemanaAtual();
+        const diasLabel = [t('tsSeg'), t('tsTer'), t('tsQua'), t('tsQui'), t('tsSex'), t('tsSab'), t('tsDom')];
+
+        const fimSemana = new Date(tsSemanaBase);
+        fimSemana.setDate(fimSemana.getDate() + 6);
+        document.getElementById('tsSemanaLabel').textContent =
+            `${formatarDataCurta(tsSemanaBase)} - ${formatarDataCurta(fimSemana)}`;
+
+        let totalSemana = 0;
+        let totalExtra = 0;
+
+        let linhas = '';
+        for (let i = 0; i < 7; i++) {
+            const dataDia = new Date(tsSemanaBase);
+            dataDia.setDate(dataDia.getDate() + i);
+            const dia = semana.dias[i];
+            // Intervalo fixo em 1h (60 min)
+            const intervaloFixo = 60;
+            const horas = calcularHoras(dia.inicio, dia.fim, intervaloFixo);
+            const extra = horas > 8 ? horas - 8 : 0;
+            totalSemana += horas;
+            totalExtra += extra;
+
+            linhas += `
+                <tr>
+                    <td style="font-weight:bold; white-space:nowrap; font-size:13px;">${diasLabel[i]}<br><span style="font-weight:normal; font-size:11px; color:#888;">${formatarDataCurta(dataDia)}</span></td>
+                    <td><input type="text" value="${escapeHtml(dia.atividade)}" placeholder="${t('tsAtividadePlaceholder')}" oninput="atualizarDiaTimesheet(${i}, 'atividade', this.value)" style="font-size:13px;"></td>
+                    <td><input type="time" value="${dia.inicio}" onchange="atualizarDiaTimesheet(${i}, 'inicio', this.value)" style="width:105px; font-size:13px;"></td>
+                    <td><input type="time" value="${dia.fim}" onchange="atualizarDiaTimesheet(${i}, 'fim', this.value)" style="width:105px; font-size:13px;"></td>
+                    <td style="text-align:center; font-size:13px; color:#666; width:40px;">1h</td>
+                    <td><input type="number" min="0" value="${dia.standby || ''}" placeholder="0" style="width:65px; font-size:13px;" onchange="atualizarDiaTimesheet(${i}, 'standby', this.value)"></td>
+                    <td style="text-align:center; font-weight:bold; font-size:13px;">${horas.toFixed(2)}h</td>
+                    <td style="text-align:center; font-size:13px; ${extra > 0 ? 'color:#dc3545; font-weight:bold;' : 'color:#aaa;'}">${extra > 0 ? extra.toFixed(2) + 'h' : '-'}</td>
+                </tr>
+            `;
+        }
+
+        const html = `
+            <table class="tabela-wizard">
+                <thead>
+                    <tr>
+                        <th style="font-size:12px;">${t('tsDiaColuna')}</th>
+                        <th style="font-size:12px;">${t('tsAtividadeColuna')}</th>
+                        <th style="font-size:12px;">${t('tsInicioColuna')}</th>
+                        <th style="font-size:12px;">${t('tsFimColuna')}</th>
+                        <th style="font-size:12px; width:40px;">${t('tsIntervaloColuna')}</th>
+                        <th style="font-size:12px;">${t('tsStandbyColuna')}</th>
+                        <th style="font-size:12px;">${t('tsHorasColuna')}</th>
+                        <th style="font-size:12px;">${t('tsExtraColuna')}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${linhas}
+                </tbody>
+                <tfoot>
+                    <tr style="background:#f0f4f8; font-weight:bold;">
+                        <td colspan="6" style="text-align:right; font-size:13px;">${t('tsTotalSemana')}</td>
+                        <td style="text-align:center; font-size:13px;">${totalSemana.toFixed(2)}h</td>
+                        <td style="text-align:center; font-size:13px; color:${totalExtra > 0 ? '#dc3545' : '#aaa'};">${totalExtra > 0 ? totalExtra.toFixed(2) + 'h' : '-'}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        `;
+
+        document.getElementById('tsTabelaContainer').innerHTML = html;
+        document.getElementById('tsObservacoes').value = semana.observacoes || '';
+        document.getElementById('tsAssinaturaTecnicoNome').value = semana.assinaturaTecnico.nome || '';
+        document.getElementById('tsAssinaturaTecnicoData').value = semana.assinaturaTecnico.data || '';
+        document.getElementById('tsAssinaturaClienteNome').value = semana.assinaturaCliente.nome || '';
+        document.getElementById('tsAssinaturaClienteData').value = semana.assinaturaCliente.data || '';
+    }
+
+    // ==========================================
+    // AUTOSAVE - DEBOUNCE (evita salvar a cada tecla)
+    // ==========================================
+    let _debounceAutosave = null;
+    function autosaveDebounced() {
+        if (!podeEditar()) return;
+        clearTimeout(_debounceAutosave);
+        _debounceAutosave = setTimeout(() => salvarProgressoAPI('em_processo'), 1500);
+    }
+
+    function atualizarDiaTimesheet(indiceDia, campo, valor) {
+        const semana = dadosSemanaAtual();
+        semana.dias[indiceDia][campo] = valor;
+        // O campo "atividade" não entra nos cálculos de horas/extra, então evitamos
+        // re-renderizar a tabela a cada letra digitada (isso fazia o input perder o foco).
+        if (campo !== 'atividade') {
+            renderizarTimesheet();
+        }
+        autosaveDebounced();
+    }
+
+    function salvarObservacaoTimesheet() {
+        const semana = dadosSemanaAtual();
+        semana.observacoes = document.getElementById('tsObservacoes').value;
+        autosaveDebounced();
+    }
+
+    function salvarAssinaturaTimesheet() {
+        const semana = dadosSemanaAtual();
+        semana.assinaturaTecnico.nome = document.getElementById('tsAssinaturaTecnicoNome').value;
+        semana.assinaturaTecnico.data = document.getElementById('tsAssinaturaTecnicoData').value;
+        semana.assinaturaCliente.nome = document.getElementById('tsAssinaturaClienteNome').value;
+        semana.assinaturaCliente.data = document.getElementById('tsAssinaturaClienteData').value;
+        autosaveDebounced();
+    }
+
+    // ==========================================
+    // TIMESHEET - DASHBOARD (GRÁFICOS)
+    // ==========================================
+
+    // Gera um gráfico de barras (agrupadas por categoria) em SVG puro, sem dependências externas.
+    function criarGraficoBarrasSVG({ categorias, series, sufixo = 'h', largura = 340, altura = 170 }) {
+        const margemEsq = 34, margemBaixo = 30, margemTopo = 16, margemDir = 10;
+        const larguraUtil = largura - margemEsq - margemDir;
+        const alturaUtil = altura - margemTopo - margemBaixo;
+
+        let maxValor = 0;
+        series.forEach(s => s.valores.forEach(v => { if (v !== null && v !== undefined && v > maxValor) maxValor = v; }));
+        const tetoEixo = Math.max(1, Math.ceil((maxValor || 1) * 1.2));
+
+        const larguraGrupo = larguraUtil / categorias.length;
+        const espacamentoGrupo = larguraGrupo * 0.15;
+        const larguraBarrasGrupo = larguraGrupo - (espacamentoGrupo * 2);
+        const larguraBarra = larguraBarrasGrupo / series.length;
+
+        let svg = `<svg viewBox="0 0 ${largura} ${altura}" xmlns="http://www.w3.org/2000/svg" style="width:100%; height:auto; font-family:Arial, sans-serif;">`;
+
+        [0, 0.5, 1].forEach(fracao => {
+            const y = margemTopo + alturaUtil - (alturaUtil * fracao);
+            const valorEixo = (tetoEixo * fracao).toFixed(1);
+            svg += `<line x1="${margemEsq}" y1="${y}" x2="${largura - margemDir}" y2="${y}" stroke="#e9ecef" stroke-width="1"/>`;
+            svg += `<text x="${margemEsq - 6}" y="${y + 3}" font-size="8" fill="#888" text-anchor="end">${valorEixo}</text>`;
+        });
+
+        categorias.forEach((cat, i) => {
+            const grupoX = margemEsq + (i * larguraGrupo);
+            series.forEach((serie, j) => {
+                const val = serie.valores[i];
+                if (val === null || val === undefined) return;
+                const barH = (val / tetoEixo) * alturaUtil;
+                const barX = grupoX + espacamentoGrupo + (j * larguraBarra);
+                const barY = margemTopo + alturaUtil - barH;
+                svg += `<rect x="${barX.toFixed(1)}" y="${barY.toFixed(1)}" width="${(larguraBarra * 0.82).toFixed(1)}" height="${barH.toFixed(1)}" fill="${serie.cor}" rx="2"/>`;
+                if (val > 0) {
+                    svg += `<text x="${(barX + larguraBarra * 0.41).toFixed(1)}" y="${(barY - 3).toFixed(1)}" font-size="8" fill="#555" text-anchor="middle">${val.toFixed(1)}${sufixo}</text>`;
+                }
+            });
+            svg += `<text x="${(grupoX + larguraGrupo / 2).toFixed(1)}" y="${altura - margemBaixo + 13}" font-size="9" fill="#333" text-anchor="middle" font-weight="bold">${cat}</text>`;
+        });
+
+        svg += `<line x1="${margemEsq}" y1="${margemTopo + alturaUtil}" x2="${largura - margemDir}" y2="${margemTopo + alturaUtil}" stroke="#ccc" stroke-width="1"/>`;
+        svg += `</svg>`;
+        return svg;
+    }
+
+    // Gera um gráfico de linha (uma ou mais séries) em SVG puro.
+    function criarGraficoLinhaSVG({ categorias, series, sufixo = 'h', largura = 340, altura = 170 }) {
+        const margemEsq = 34, margemBaixo = 30, margemTopo = 16, margemDir = 10;
+        const larguraUtil = largura - margemEsq - margemDir;
+        const alturaUtil = altura - margemTopo - margemBaixo;
+
+        let maxValor = 0;
+        series.forEach(s => s.valores.forEach(v => { if (v !== null && v !== undefined && v > maxValor) maxValor = v; }));
+        const tetoEixo = Math.max(1, Math.ceil((maxValor || 1) * 1.2));
+
+        const passoX = categorias.length > 1 ? larguraUtil / (categorias.length - 1) : 0;
+
+        let svg = `<svg viewBox="0 0 ${largura} ${altura}" xmlns="http://www.w3.org/2000/svg" style="width:100%; height:auto; font-family:Arial, sans-serif;">`;
+
+        [0, 0.5, 1].forEach(fracao => {
+            const y = margemTopo + alturaUtil - (alturaUtil * fracao);
+            const valorEixo = (tetoEixo * fracao).toFixed(1);
+            svg += `<line x1="${margemEsq}" y1="${y}" x2="${largura - margemDir}" y2="${y}" stroke="#e9ecef" stroke-width="1"/>`;
+            svg += `<text x="${margemEsq - 6}" y="${y + 3}" font-size="8" fill="#888" text-anchor="end">${valorEixo}</text>`;
+        });
+
+        series.forEach(serie => {
+            const pontos = serie.valores.map((v, i) => {
+                const x = margemEsq + (i * passoX);
+                const y = (v === null || v === undefined) ? null : margemTopo + alturaUtil - ((v / tetoEixo) * alturaUtil);
+                return { x, y, v };
+            });
+
+            // Monta o path pulando pontos nulos (dias ainda sem informação),
+            // quebrando a linha em segmentos separados quando necessário.
+            let pathD = '';
+            let precisaMove = true;
+            pontos.forEach(p => {
+                if (p.v === null || p.v === undefined) {
+                    precisaMove = true;
+                    return;
+                }
+                pathD += `${precisaMove ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)} `;
+                precisaMove = false;
+            });
+            if (pathD) {
+                svg += `<path d="${pathD.trim()}" fill="none" stroke="${serie.cor}" stroke-width="2"/>`;
+            }
+            pontos.forEach(p => {
+                if (p.v === null || p.v === undefined) return;
+                svg += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="${serie.cor}"/>`;
+            });
+        });
+
+        categorias.forEach((cat, i) => {
+            const x = margemEsq + (i * passoX);
+            svg += `<text x="${x.toFixed(1)}" y="${altura - margemBaixo + 13}" font-size="8" fill="#333" text-anchor="middle" font-weight="bold">${cat}</text>`;
+        });
+
+        svg += `<line x1="${margemEsq}" y1="${margemTopo + alturaUtil}" x2="${largura - margemDir}" y2="${margemTopo + alturaUtil}" stroke="#ccc" stroke-width="1"/>`;
+        svg += `</svg>`;
+        return svg;
+    }
+
+    // Gera um gráfico de rosca (donut) em SVG puro.
+    function criarGraficoRoscaSVG({ fatias, sufixo = 'h', largura = 340, altura = 170 }) {
+        const raio = (Math.min(largura, altura) / 2) - 12;
+        const espessura = raio * 0.42;
+        const cx = largura / 2;
+        const cy = altura / 2;
+        const circunferencia = 2 * Math.PI * raio;
+        const total = fatias.reduce((acc, f) => acc + (f.valor || 0), 0);
+
+        let svg = `<svg viewBox="0 0 ${largura} ${altura}" xmlns="http://www.w3.org/2000/svg" style="width:100%; height:auto; font-family:Arial, sans-serif;">`;
+
+        if (total <= 0) {
+            svg += `<circle cx="${cx}" cy="${cy}" r="${raio}" fill="none" stroke="#e9ecef" stroke-width="${espessura}"/>`;
+        } else {
+            let acumulado = 0;
+            fatias.forEach(f => {
+                const valor = f.valor || 0;
+                if (valor <= 0) return;
+                const dash = (valor / total) * circunferencia;
+                svg += `<circle cx="${cx}" cy="${cy}" r="${raio}" fill="none" stroke="${f.cor}" stroke-width="${espessura}" stroke-dasharray="${dash.toFixed(1)} ${(circunferencia - dash).toFixed(1)}" stroke-dashoffset="${(-acumulado).toFixed(1)}" transform="rotate(-90 ${cx} ${cy})"/>`;
+                acumulado += dash;
+            });
+        }
+
+        svg += `<text x="${cx}" y="${cy - 3}" font-size="13" fill="#2C3E50" text-anchor="middle" font-weight="bold">${total.toFixed(1)}${sufixo}</text>`;
+        svg += `<text x="${cx}" y="${cy + 12}" font-size="8" fill="#888" text-anchor="middle">${t('tsTotalSemana')}</text>`;
+        svg += `</svg>`;
+        return svg;
+    }
+
+    function criarLegendaHTML(series) {
+        return `<div class="dashboard-legenda">` +
+            series.map(s => `<span><span class="cor-box" style="background:${s.cor};"></span>${s.nome}</span>`).join('') +
+            `</div>`;
+    }
+
+    // Calcula todas as séries usadas pelos gráficos do dashboard, a partir da semana atual.
+    // Reutilizada tanto pelo modal do Dashboard quanto pela impressão do relatório.
+    function calcularDadosDashboardTimesheet() {
+        const semana = dadosSemanaAtual();
+        const diasLabel = [t('tsSeg'), t('tsTer'), t('tsQua'), t('tsQui'), t('tsSex'), t('tsSab'), t('tsDom')];
+
+        const horasTrabalhadas = [];
+        const standbyHoras = [];
+        const horasAcumuladas = [];
+        const standbyAcumulado = [];
+        let totalSemana = 0;
+        let totalExtra = 0;
+        let acumHoras = 0;
+        let acumStandby = 0;
+
+        for (let i = 0; i < 7; i++) {
+            const dia = semana.dias[i];
+            const horas = calcularHoras(dia.inicio, dia.fim, 60);
+            const extra = horas > 8 ? horas - 8 : 0;
+            const standby = (parseFloat(dia.standby) || 0) / 60;
+            const temDados = !!(dia.inicio && dia.fim) || standby > 0;
+
+            horasTrabalhadas.push(horas);
+            standbyHoras.push(standby);
+            totalSemana += horas;
+            totalExtra += extra;
+
+            acumHoras += horas;
+            acumStandby += standby;
+            // Dias sem informação preenchida ficam com valor nulo no acumulado,
+            // para o gráfico de linha não plotar pontos "aguardando atualização".
+            horasAcumuladas.push(temDados ? acumHoras : null);
+            standbyAcumulado.push(temDados ? acumStandby : null);
+        }
+        const horasNormais = totalSemana - totalExtra;
+        const totalStandby = acumStandby;
+
+        const seriesGrafico1 = [
+            { nome: t('dashboardHorasTrabalhadas'), cor: '#007bff', valores: horasTrabalhadas },
+            { nome: t('dashboardStandby'), cor: '#ffc107', valores: standbyHoras }
+        ];
+        const seriesGrafico2 = [
+            { nome: t('dashboardHorasNormais'), cor: '#28a745', valores: [horasNormais, null] },
+            { nome: t('dashboardHorasExtras'), cor: '#dc3545', valores: [null, totalExtra] }
+        ];
+        const seriesGrafico3 = [
+            { nome: t('dashboardHorasTrabalhadas'), cor: '#007bff', valores: horasAcumuladas },
+            { nome: t('dashboardStandby'), cor: '#ffc107', valores: standbyAcumulado }
+        ];
+        const fatiasGrafico4 = [
+            { nome: t('dashboardHorasNormais'), cor: '#28a745', valor: horasNormais },
+            { nome: t('dashboardHorasExtras'), cor: '#dc3545', valor: totalExtra },
+            { nome: t('dashboardStandby'), cor: '#ffc107', valor: totalStandby }
+        ];
+
+        return { diasLabel, seriesGrafico1, seriesGrafico2, seriesGrafico3, fatiasGrafico4 };
+    }
+
+    // Monta o HTML do grid 2x2 com os 4 gráficos do dashboard.
+    // tamanho permite usar dimensões maiores na impressão do que no modal em tela.
+    function construirGraficosDashboardHTML(dados, tamanho = { largura: 340, altura: 170 }) {
+        const grafico1 = criarGraficoBarrasSVG({ categorias: dados.diasLabel, series: dados.seriesGrafico1, ...tamanho });
+        const grafico2 = criarGraficoBarrasSVG({ categorias: [t('dashboardHorasNormais'), t('dashboardHorasExtras')], series: dados.seriesGrafico2, ...tamanho });
+        const grafico3 = criarGraficoLinhaSVG({ categorias: dados.diasLabel, series: dados.seriesGrafico3, ...tamanho });
+        const grafico4 = criarGraficoRoscaSVG({ fatias: dados.fatiasGrafico4, ...tamanho });
+
+        return `
+            <div class="dashboard-graficos-grid">
+                <div class="dashboard-grafico-box">
+                    <h4>${t('dashboardGrafico1Titulo')}</h4>
+                    ${grafico1}
+                    ${criarLegendaHTML(dados.seriesGrafico1)}
+                </div>
+                <div class="dashboard-grafico-box">
+                    <h4>${t('dashboardGrafico3Titulo')}</h4>
+                    ${grafico3}
+                    ${criarLegendaHTML(dados.seriesGrafico3)}
+                </div>
+                <div class="dashboard-grafico-box">
+                    <h4>${t('dashboardGrafico2Titulo')}</h4>
+                    ${grafico2}
+                    ${criarLegendaHTML(dados.seriesGrafico2)}
+                </div>
+                <div class="dashboard-grafico-box">
+                    <h4>${t('dashboardGrafico4Titulo')}</h4>
+                    ${grafico4}
+                    ${criarLegendaHTML(dados.fatiasGrafico4)}
+                </div>
+            </div>
+        `;
+    }
+
+    function abrirDashboardTimesheet() {
+        const dados = calcularDadosDashboardTimesheet();
+
+        document.getElementById('dashboardTsTitulo').textContent = t('dashboardTitulo');
+        document.getElementById('dashboardTsFechar').textContent = t('dashboardFecharBtn');
+        document.getElementById('dashboardTsConteudo').innerHTML = construirGraficosDashboardHTML(dados);
+
+        document.getElementById('modalDashboardTs').classList.remove('oculto');
+    }
+
+    function fecharDashboardTimesheet() {
+        document.getElementById('modalDashboardTs').classList.add('oculto');
+    }
+
+    // ==========================================
+    // MODAL DE CONFIRMAÇÃO CUSTOMIZADO
+    // (substitui window.confirm, que pode ser bloqueado em alguns previews)
+    // ==========================================
+    function showConfirmModal(mensagem, onConfirm, onCancel) {
+        const modal = document.getElementById('modalConfirm');
+        document.getElementById('modalConfirmTexto').textContent = mensagem;
+        document.getElementById('modalConfirmOk').textContent = t('modalOkBtn');
+        document.getElementById('modalConfirmCancelar').textContent = t('modalCancelarBtn');
+        modal.classList.remove('oculto');
+
+        const btnOk = document.getElementById('modalConfirmOk');
+        const btnCancelar = document.getElementById('modalConfirmCancelar');
+
+        function fechar() {
+            modal.classList.add('oculto');
+            btnOk.removeEventListener('click', confirmar);
+            btnCancelar.removeEventListener('click', cancelar);
+        }
+        function confirmar() {
+            fechar();
+            onConfirm();
+        }
+        function cancelar() {
+            fechar();
+            if (onCancel) onCancel();
+        }
+        btnOk.addEventListener('click', confirmar);
+        btnCancelar.addEventListener('click', cancelar);
+    }
+
+    // ==========================================
+    // FUNÇÃO 5 - CONFIRMAR VOLTAR INÍCIO
+    // ==========================================
+    function confirmarVoltarInicio() {
+        showConfirmModal(t('confirmVoltarInicio'), voltarMenu);
+    }
+
+    // ==========================================
+    // FUNÇÃO 6 - VOLTAR MENU
+    // ==========================================
+    function voltarMenu() {
+        document.querySelectorAll('.pagina').forEach(p => p.classList.remove('ativa'));
+        moduloAtual = '';
+        resetarBlade();
+        irParaPainel();
+    }
+
+    // ==========================================
+    // FUNÇÃO 7 - RESETAR BLADE
+    // ==========================================
+    function resetarBlade() {
+        document.getElementById('nivel0').classList.remove('hidden');
+        document.getElementById('nivel2').classList.add('hidden');
+        document.getElementById('nivel3').classList.add('hidden');
+        tipoReparo = '';
+        defeitoSelecionado = '';
+        etapaAtual = 0;
+        relatorioAtual = { defeito: '', etapas: [], imagens: {} };
+        imagensTemp = {};
+        document.getElementById('wizardContainer').innerHTML = '';
+        camposMasterData.forEach(campo => {
+            const el = document.getElementById(`md_${campo.id}`);
+            if (el) el.value = '';
+        });
+        atualizarBotoesTipoReparo();
+    }
+
+    // ==========================================
+    // FUNÇÃO 8 - SELECIONAR TIPO DE REPARO (Interno/Externo)
+    // ==========================================
+    function selecionarTipoReparo(tipo) {
+        tipoReparo = tipo;
+        atualizarBotoesTipoReparo();
+    }
+
+    function atualizarBotoesTipoReparo() {
+        const btnInterno = document.getElementById('btnReparoInterno');
+        const btnExterno = document.getElementById('btnReparoExterno');
+        const btnGenerico = document.getElementById('btnReparoGenerico');
+        if (!btnInterno || !btnExterno || !btnGenerico) return;
+        
+        btnInterno.classList.toggle('ativo', tipoReparo === 'interno');
+        btnExterno.classList.toggle('ativo', tipoReparo === 'externo');
+        btnGenerico.classList.toggle('ativo', tipoReparo === 'generico');
+    }
+    
+    // ==========================================
+    // FUNÇÃO - CONFIRMAR DANO
+    // ==========================================
+    function confirmarDano() {
+        const descricao = document.getElementById('danoDescricao').value.trim();
+        const zi = document.getElementById('danoZi').value.trim();
+        const zf = document.getElementById('danoZf').value.trim();
+
+        if (!descricao) {
+            alert(t('alertDescrevaDano'));
+            return;
+        }
+
+        if (!tipoReparo) {
+            alert(t('alertSelecioneTipoReparo'));
+            return;
+        }
+
+        let defeito = descricao;
+        if (zi || zf) {
+            defeito += ` (Zi: ${zi || '-'} / Zf: ${zf || '-'})`;
+        }
+
+        defeitoSelecionado = defeito;
+        document.getElementById('nivel2').classList.add('hidden');
+        document.getElementById('nivel3').classList.remove('hidden');
+        
+        // SE FOR GENÉRICO, CHAMA A FUNÇÃO ESPECÍFICA
+        if (tipoReparo === 'generico') {
+            iniciarWizardGenerico(defeito);
+        } else {
+            iniciarWizard(defeito);
+        }
+        salvarProgressoAPI('em_processo');
+    }
+
+    // ==========================================
+    // FUNÇÃO - INICIAR WIZARD (INTERNO/EXTERNO)
+    // ==========================================
+    function iniciarWizard(defeito) {
+        relatorioAtual = { 
+            defeito: defeito, 
+            etapas: [], 
+            imagens: {}, 
+            generico: false,
+            materiais: [],
+            equipamentos: []
+        };
+        etapaAtual = 0;
+        imagensTemp = {};
+        
+        // CAPTURA DADOS DOS 3 TÉCNICOS
+        const tecnicos = [];
+        for (let i = 1; i <= 3; i++) {
+            const nome = document.getElementById(`tecnico${i}_nome`)?.value.trim() || '';
+            const funcao = document.getElementById(`tecnico${i}_funcao`)?.value.trim() || '';
+            if (nome || funcao) {
+                tecnicos.push({ nome, funcao });
+            }
+        }
+        window.dadosTecnicos = tecnicos;
+        
+        const etapasAplicaveis = filtrarEtapas(defeito);
+        if (etapasAplicaveis.length === 0) {
+            alert(t('alertNenhumaEtapa'));
+            return;
+        }
+        
+        renderizarEtapa(etapasAplicaveis, 0);
+    }
+
+    // ==========================================
+    // FUNÇÃO - INICIAR WIZARD GENÉRICO
+    // ==========================================
+    function iniciarWizardGenerico(defeito) {
+        relatorioAtual = { 
+            defeito: defeito, 
+            etapas: [], 
+            imagens: {}, 
+            generico: true,
+            materiais: [],
+            equipamentos: []
+        };
+        etapaAtual = 0;
+        imagensTemp = {};
+        
+        // CAPTURA DADOS DOS 3 TÉCNICOS
+        const tecnicos = [];
+        for (let i = 1; i <= 3; i++) {
+            const nome = document.getElementById(`tecnico${i}_nome`)?.value.trim() || '';
+            const funcao = document.getElementById(`tecnico${i}_funcao`)?.value.trim() || '';
+            if (nome || funcao) {
+                tecnicos.push({ nome, funcao });
+            }
+        }
+        window.dadosTecnicos = tecnicos;
+        
+        renderizarWizardGenerico();
+    }
+    
+    // ==========================================
+    // FUNÇÃO - RENDERIZAR WIZARD GENÉRICO
+    // ==========================================
+    function renderizarWizardGenerico() {
+        const container = document.getElementById('wizardContainer');
+        const etapas = relatorioAtual.etapas || [];
+        
+        let html = `
+              <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #17a2b8;">
+                <h3 style="color: #2C3E50;">${t('genericoModoTitulo')}</h3>
+                <p style="color: #666; font-size: 14px;">${t('genericoModoDescricao')}</p>
+            </div>
+            <div id="etapasGenericasContainer">
+        `;
+        
+        if (etapas.length === 0) {
+            relatorioAtual.etapas.push({ id: Date.now(), nome: '', texto: '', imagens: [] });
+        }
+        
+        etapas.forEach((etapa, index) => {
+            const fotosAtuais = (etapa.imagens || []).length;
+            html += `
+                <div class="etapa-generica" data-index="${index}">
+                    <div class="etapa-header">
+                        <div>
+                            <span class="etapa-numero">${tf('etapaNumeroLabel', {n: index + 1})}</span>
+                        </div>
+                        ${index > 0 ? `<button class="btn-remover-etapa" onclick="removerEtapaGenerica(${index})"></button>` : ''}
+                    </div>
+                    <div class="etapa-nome">
+                        <input type="text" id="etapaNome_${index}" placeholder="${t('etapaNomePlaceholder')}" value="${escapeHtml(etapa.nome) || ''}" onchange="salvarNomeEtapaGenerica(${index}, this.value)">
+                    </div>
+                    <textarea id="etapaTexto_${index}" placeholder="${t('etapaObservacoesPlaceholder')}" onchange="salvarTextoEtapaGenerica(${index}, this.value)">${escapeHtml(etapa.texto) || ''}</textarea>
+                    <input type="file" accept="image/*" onchange="carregarImagemGenerica(event, ${index})" multiple>
+                    <div id="previewGenerica_${index}" class="preview-imagens"></div>
+                    <div class="foto-status">${t('fotosStatusLabel')} ${fotosAtuais} <span style="color:#999; font-size:12px;">${t('fotosMinSePreenchidaLabel')}</span></div>
+                </div>
+            `;
+        });
+        
+        html += `
+            </div>
+            <div class="botoes-acoes-generico">
+                <button class="btn-adicionar-etapa" onclick="adicionarEtapaGenerica()">${t('adicionarEtapaBtn')}</button>
+                <button class="btn-finalizar-generico" onclick="finalizarEtapasGenericas()">${t('finalizarBtn')}</button>
+            </div>
+        `;
+        
+        container.innerHTML = html;
+        
+        etapas.forEach((etapa, index) => {
+            if (etapa.imagens && etapa.imagens.length > 0) {
+                const preview = document.getElementById(`previewGenerica_${index}`);
+                if (preview) {
+                    etapa.imagens.forEach((img, i) => {
+                        adicionarImagemPreviewGenerica(preview, img, index, i);
+                    });
+                }
+            }
+        });
+    }
+
+        // ==========================================
+    // FUNÇÕES AUXILIARES DO MODO GENÉRICO
+    // ==========================================
+    function adicionarEtapaGenerica() {
+        relatorioAtual.etapas.push({ id: Date.now(), nome: '', texto: '', imagens: [] });
+        renderizarWizardGenerico();
+        const container = document.getElementById('etapasGenericasContainer');
+        if (container) {
+            const ultimaEtapa = container.lastElementChild;
+            if (ultimaEtapa) {
+                setTimeout(() => ultimaEtapa.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+            }
+        }
+    }
+
+    function removerEtapaGenerica(index) {
+        if (!confirm(t('confirmRemoverEtapa'))) return;
+        relatorioAtual.etapas.splice(index, 1);
+        renderizarWizardGenerico();
+    }
+
+    function salvarNomeEtapaGenerica(index, valor) {
+        if (relatorioAtual.etapas[index]) {
+            relatorioAtual.etapas[index].nome = valor.trim();
+        }
+    }
+
+    function salvarTextoEtapaGenerica(index, valor) {
+        if (relatorioAtual.etapas[index]) {
+            relatorioAtual.etapas[index].texto = valor.trim();
+        }
+    }
+
+    function carregarImagemGenerica(event, index) {
+        const files = event.target.files;
+        if (!files.length) return;
+        
+        if (!relatorioAtual.etapas[index]) {
+            relatorioAtual.etapas[index] = { id: Date.now(), nome: '', texto: '', imagens: [] };
+        }
+        
+        if (!relatorioAtual.etapas[index].imagens) {
+            relatorioAtual.etapas[index].imagens = [];
+        }
+        
+        const preview = document.getElementById(`previewGenerica_${index}`);
+        
+        Array.from(files).forEach(async (file) => {
+            if (!file.type.startsWith('image/')) return;
+            const imgData = await redimensionarImagem(file, 800, 0.85);
+            relatorioAtual.etapas[index].imagens.push(imgData);
+            adicionarImagemPreviewGenerica(preview, imgData, index, relatorioAtual.etapas[index].imagens.length - 1);
+            atualizarContadorFotosGenerica(index);
+        });
+        event.target.value = '';
+    }
+
+    function adicionarImagemPreviewGenerica(container, imgData, index, imgIndex) {
+        const div = document.createElement('div');
+        div.className = 'foto-item';
+        
+        const img = document.createElement('img');
+        img.src = imgData;
+        img.alt = `Foto ${imgIndex + 1}`;
+        
+        const btn = document.createElement('button');
+        btn.className = 'btn-remover';
+        btn.textContent = '';
+        btn.onclick = function(e) {
+            e.stopPropagation();
+            removerImagemGenerica(index, imgIndex);
+        };
+        
+        div.appendChild(img);
+        div.appendChild(btn);
+        container.appendChild(div);
+    }
+
+    function removerImagemGenerica(index, imgIndex) {
+        if (!confirm(t('confirmRemoverFoto'))) return;
+        if (relatorioAtual.etapas[index] && relatorioAtual.etapas[index].imagens) {
+            relatorioAtual.etapas[index].imagens.splice(imgIndex, 1);
+            renderizarWizardGenerico();
+        }
+    }
+
+    function atualizarContadorFotosGenerica(index) {
+        const container = document.getElementById('etapasGenericasContainer');
+        if (!container) return;
+        const etapaDiv = container.querySelector(`.etapa-generica[data-index="${index}"]`);
+        if (!etapaDiv) return;
+        const statusDiv = etapaDiv.querySelector('.foto-status');
+        if (statusDiv) {
+            const fotos = relatorioAtual.etapas[index]?.imagens?.length || 0;
+            statusDiv.textContent = `${t('fotosStatusLabel')} ${fotos}`;
+        }
+    }
+
+        function finalizarEtapasGenericas() {
+        // Verifica se alguma etapa tem nome ou texto, mas menos de 2 fotos
+        const etapasInvalidas = relatorioAtual.etapas.filter(e => {
+            const temNome = e.nome && e.nome.trim() !== '';
+            const temTexto = e.texto && e.texto.trim() !== '';
+            const temFotos = e.imagens && e.imagens.length >= 2;
+            return (temNome || temTexto) && !temFotos;
+        });
+        
+        if (etapasInvalidas.length > 0) {
+            const nomes = etapasInvalidas.map(e => `"${e.nome || t('etapaSemNomeLabel')}"`).join(', ');
+            alert(tf('alertEtapasSemFotos', {nomes}));
+            return;
+        }
+        
+        const etapasFiltradas = relatorioAtual.etapas.filter(e => {
+            const temNome = e.nome && e.nome.trim() !== '';
+            const temTexto = e.texto && e.texto.trim() !== '';
+            const temFotos = e.imagens && e.imagens.length > 0;
+            return temNome || temTexto || temFotos;
+        });
+        
+        if (etapasFiltradas.length === 0) {
+            alert('Adicione pelo menos uma etapa com nome, observação ou foto.');
+            return;
+        }
+        
+        relatorioAtual.etapas = etapasFiltradas;
+        renderizarMateriaisEquipamentos([]);
+    }
+
+    // ==========================================
+    // FUNÇÃO 11 - FILTRAR ETAPAS
+    // ==========================================
+    function filtrarEtapas(defeito) {
+        return todasEtapas.filter(etapa => !etapa.tipos || etapa.tipos.includes(tipoReparo));
+    }
+
+    // ==========================================
+    // FUNÇÃO 12 - RENDERIZAR ETAPA
+    // ==========================================
+    function renderizarEtapa(etapas, index) {
+        if (index >= etapas.length) {
+            renderizarMateriaisEquipamentos(etapas);
+            return;
+        }
+
+        const container = document.getElementById('wizardContainer');
+        const etapa = etapas[index];
+        const etapaData = relatorioAtual.etapas[index] || {};
+        
+        const isObrigatorio = etapa.obrigatorio;
+        const fotosMin = etapa.fotosMin || 1;
+        const fotosAtuais = (imagensTemp[index] || []).length;
+        const fotosOk = fotosAtuais >= fotosMin;
+        
+        const obrigTag = isObrigatorio ? '<span class="obrigatorio">*</span>' : '';
+        const fotosTag = `<span class="fotos-min">${tf('minFotos', {n: fotosMin})}</span>`;
+        const bordaCor = isObrigatorio ? 'border-left-color: #28a745;' : 'border-left-color: #6c757d;';
+        
+        const statusFotos = fotosOk 
+            ? `<span class="ok">${fotosAtuais}/${fotosMin}</span>` 
+            : `<span class="falta">${fotosAtuais}/${fotosMin}</span>`;
+
+        let html = `
+            <div class="etapa-wizard" style="${bordaCor}">
+                <div class="etapa-header-wizard">
+                    <div class="etapa-titulo">
+                        <h3>${tf('etapaContagem', {i: index + 1, n: etapas.length})}</h3>
+                        <h4>${etapaLabel(etapa)} ${obrigTag} ${fotosTag}</h4>
+                    </div>
+                    <div class="nav-botoes-wizard">
+                        ${index > 0 ? `<button class="btn-anterior-nav" onclick="etapaAnterior(${index})">${t('anteriorBtn')}</button>` : ''}
+                        <button class="btn-proximo" onclick="proximaEtapa(${index}, ${fotosMin})">
+                            ${t('proximoBtn')}
+                        </button>
+                    </div>
+                </div>
+        `;
+        // ===== CAMPO ESPECIAL: TEMPERATURA/UMIDADE =====
+        if (etapa.isTempUmidade) {
+            const tempFotos = (imagensTemp[`${index}_temp`] || []).length;
+            const umidadeFotos = (imagensTemp[`${index}_umidade`] || []).length;
+            
+            html += `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 10px;">
+                    <div style="background: #fff5f5; padding: 15px; border-radius: 8px; border: 1px solid #fcc;">
+                        <h4 style="color: #c0392b; margin-bottom: 8px;">${t('temperaturaTitulo')}</h4>
+                        <label>${t('valorLabel')}</label>
+                        <input type="text" id="temp_${index}" placeholder="Ex: 25°C" value="${escapeHtml(etapaData.temperatura) || ''}">
+                        <label style="margin-top: 8px;">${t('fotoTemperaturaLabel')}</label>
+                        <input type="file" accept="image/*" onchange="carregarImagemTemp(event, ${index}, 'temp')" multiple>
+                        <div id="previewTemp_${index}" class="preview-imagens"></div>
+                        <div class="foto-status">${t('fotosStatusLabel')} ${tempFotos >= 1 ? '' : ''} ${tempFotos}/1</div>
+                    </div>
+                    <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; border: 1px solid #b8d4e3;">
+                        <h4 style="color: #2980b9; margin-bottom: 8px;">${t('umidadeTitulo')}</h4>
+                        <label>${t('valorLabel')}</label>
+                        <input type="text" id="umidade_${index}" placeholder="Ex: 60%" value="${escapeHtml(etapaData.umidade) || ''}">
+                        <label style="margin-top: 8px;">${t('fotoUmidadeLabel')}</label>
+                        <input type="file" accept="image/*" onchange="carregarImagemTemp(event, ${index}, 'umidade')" multiple>
+                        <div id="previewUmidade_${index}" class="preview-imagens"></div>
+                        <div class="foto-status">${t('fotosStatusLabel')} ${umidadeFotos >= 1 ? '' : ''} ${umidadeFotos}/1</div>
+                    </div>
+                </div>
+                <label>${t('observacoesLabel')}</label>
+                <textarea id="textoEtapa${index}" placeholder="${t('placeholderObservacoes')}">${escapeHtml(etapaData.texto) || ''}</textarea>
+            `;
+        }
+        // ===== CAMPO ESPECIAL: LAMINAÇÃO =====
+        else if (etapa.isLaminacao) {
+            const tiposCamada = ['BIAX', 'TRIAX', 'UD', 'CSM', 'COMBI', 'PEEL PLY'];
+            const isObrigatorioCamada = etapa.camadaNum <= 2;
+            
+            html += `
+                <div style="margin-bottom: 10px;">
+                    <label>${t('tipoCamadaLabel')} ${isObrigatorioCamada ? '<span class="obrigatorio">*</span>' : ''}</label>
+                    <select id="tipoCamada_${index}" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; font-size:14px;">
+                        <option value="">${t('selecioneOption')}</option>
+                        ${tiposCamada.map(tp => `<option value="${tp}" ${etapaData.tipoCamada === tp ? 'selected' : ''}>${tp}</option>`).join('')}
+                    </select>
+                    ${!isObrigatorioCamada ? `<span style="font-size:12px;color:#666;display:block;margin-top:4px;">${t('avisoCamadaOpcional')}</span>` : ''}
+                </div>
+                <label>${t('observacoesLabel')}</label>
+                <textarea id="textoEtapa${index}" placeholder="${t('placeholderObservacoes')}">${escapeHtml(etapaData.texto) || ''}</textarea>
+            `;
+        }
+        // ===== CAMPO PADRÃO =====
+        else {
+            html += `
+                <label>${t('observacoesLabel')}</label>
+                <textarea id="textoEtapa${index}" placeholder="${t('placeholderObservacoes')}">${escapeHtml(etapaData.texto) || ''}</textarea>
+            `;
+        }
+        // ===== FOTOS (APENAS PARA ETAPAS NÃO TEMP/UMIDADE) =====
+        if (!etapa.isTempUmidade) {
+            html += `
+                <label>${tf('adicionarFotosLabel', {n: fotosMin})}</label>
+                <input type="file" id="fotoEtapa${index}" accept="image/*" onchange="carregarImagem(event, ${index}, ${fotosMin})" multiple>
+                <div id="preview${index}" class="preview-imagens"></div>
+                <div class="foto-status">${t('fotosAnexadasLabel')} ${statusFotos}</div>
+            `;
+        }
+
+        html += `
+            </div>
+        `;
+       
+        container.innerHTML = html;
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // Renderiza imagens já carregadas
+        if (!etapa.isTempUmidade && imagensTemp[index]) {
+            const preview = document.getElementById(`preview${index}`);
+            if (preview) {
+                imagensTemp[index].forEach((img, i) => {
+                    adicionarImagemPreview(preview, img, index, i, 'normal');
+                });
+            }
+        } else if (etapa.isTempUmidade) {
+            ['temp', 'umidade'].forEach(tipo => {
+                const key = `${index}_${tipo}`;
+                if (imagensTemp[key]) {
+                    const previewId = tipo === 'temp' ? `previewTemp_${index}` : `previewUmidade_${index}`;
+                    const preview = document.getElementById(previewId);
+                    if (preview) {
+                        imagensTemp[key].forEach((img, i) => {
+                            adicionarImagemPreview(preview, img, index, i, tipo);
+                        });
+                    }
+                }
+            });
+        }
+    }
+
+    // ==========================================
+    // FUNÇÃO 13 - ADICIONAR IMAGEM AO PREVIEW
+    // ==========================================
+    function adicionarImagemPreview(container, imgData, index, imgIndex, tipo) {
+        const div = document.createElement('div');
+        div.className = 'foto-item';
+        
+        const img = document.createElement('img');
+        img.src = imgData;
+        img.alt = `Foto ${imgIndex + 1}`;
+        
+        const btn = document.createElement('button');
+        btn.className = 'btn-remover';
+        btn.textContent = '';
+        btn.onclick = function(e) {
+            e.stopPropagation();
+            removerImagem(index, imgIndex, tipo);
+        };
+        
+        div.appendChild(img);
+        div.appendChild(btn);
+        container.appendChild(div);
+    }
+
+    // ==========================================
+    // FUNÇÃO 14 - CARREGAR IMAGEM
+    // ==========================================
+    function carregarImagem(event, index, fotosMin) {
+        const files = event.target.files;
+        if (!files.length) return;
+        
+        imagensTemp[index] = imagensTemp[index] || [];
+        const preview = document.getElementById(`preview${index}`);
+        
+        Array.from(files).forEach(async (file) => {
+            if (!file.type.startsWith('image/')) return;
+            
+            const imgData = await redimensionarImagem(file, 800, 0.85);
+            const imgIndex = imagensTemp[index].length;
+            imagensTemp[index].push(imgData);
+            
+            adicionarImagemPreview(preview, imgData, index, imgIndex, 'normal');
+            
+            const fotosAtuais = imagensTemp[index].length;
+            const statusDiv = preview.parentElement.querySelector('.foto-status');
+            if (statusDiv) {
+                const ok = fotosAtuais >= fotosMin;
+                statusDiv.innerHTML = `${t('fotosAnexadasLabel')} ${ok ? '' : ''} ${fotosAtuais}/${fotosMin}`;
+            }
+        });
+        event.target.value = '';
+    }
+    // ==========================================
+    // FUNÇÃO 15 - CARREGAR IMAGEM TEMPERATURA/UMIDADE
+    // ==========================================
+    function carregarImagemTemp(event, index, tipo) {
+        const files = event.target.files;
+        if (!files.length) return;
+        
+        const key = `${index}_${tipo}`;
+        imagensTemp[key] = imagensTemp[key] || [];
+        const previewId = tipo === 'temp' ? `previewTemp_${index}` : `previewUmidade_${index}`;
+        const preview = document.getElementById(previewId);
+        
+        Array.from(files).forEach(async (file) => {
+            if (!file.type.startsWith('image/')) return;
+            
+            const imgData = await redimensionarImagem(file, 800, 0.85);
+            const imgIndex = imagensTemp[key].length;
+            imagensTemp[key].push(imgData);
+            
+            adicionarImagemPreview(preview, imgData, index, imgIndex, tipo);
+            
+            const fotosAtuais = imagensTemp[key].length;
+            const statusDiv = preview.parentElement.querySelector('.foto-status');
+            if (statusDiv) {
+                const ok = fotosAtuais >= 1;
+                statusDiv.innerHTML = `${t('fotosStatusLabel')} ${ok ? '' : ''} ${fotosAtuais}/1`;
+            }
+        });
+        event.target.value = '';
+    }
+
+    // ==========================================
+    // FUNÇÃO 16 - REMOVER IMAGEM
+    // ==========================================
+    function removerImagem(index, imgIndex, tipo) {
+        if (!confirm(t('confirmRemoverFoto'))) return;
+        
+        let key = index;
+        let previewId = `preview${index}`;
+        
+        if (tipo === 'temp' || tipo === 'umidade') {
+            key = `${index}_${tipo}`;
+            previewId = tipo === 'temp' ? `previewTemp_${index}` : `previewUmidade_${index}`;
+        }
+        
+        if (imagensTemp[key] && imagensTemp[key].length > imgIndex) {
+            imagensTemp[key].splice(imgIndex, 1);
+        }
+        
+        const preview = document.getElementById(previewId);
+        if (preview) {
+            preview.innerHTML = '';
+            if (imagensTemp[key]) {
+                imagensTemp[key].forEach((img, i) => {
+                    adicionarImagemPreview(preview, img, index, i, tipo);
+                });
+            }
+            
+            const statusDiv = preview.parentElement.querySelector('.foto-status');
+            if (statusDiv) {
+                const fotosAtuais = imagensTemp[key] ? imagensTemp[key].length : 0;
+                const min = tipo ? 1 : (document.querySelector(`#fotoEtapa${index}`)?.dataset?.fotosMin || 1);
+                const ok = fotosAtuais >= min;
+                statusDiv.innerHTML = `${t('fotosStatusLabel')} ${ok ? '' : ''} ${fotosAtuais}/${min}`;
+            }
+        }
+    }
+
+    // ==========================================
+    // FUNÇÃO 17 - PRÓXIMA ETAPA
+    // ==========================================
+    function proximaEtapa(index, fotosMin) {
+        const etapas = filtrarEtapas(defeitoSelecionado);
+        const etapa = etapas[index];
+        const fotosAtuais = (imagensTemp[index] || []).length;
+        
+        // VALIDAÇÃO DE FOTOS
+        if (!etapa.isTempUmidade) {
+            if (etapa.obrigatorio && fotosAtuais < fotosMin) {
+                alert(tf('alertFotoMinima', {label: etapaLabel(etapa), n: fotosMin, atual: fotosAtuais}));
+                return;
+            }
+            if (!etapa.obrigatorio && fotosAtuais < fotosMin && fotosAtuais > 0) {
+                if (!confirm(tf('confirmFotoOpcional', {n: fotosMin, atual: fotosAtuais}))) {
+                    return;
+                }
+            }
+        }
+        
+        const texto = document.getElementById(`textoEtapa${index}`)?.value.trim() || '';
+        const temFotos = (imagensTemp[index] && imagensTemp[index].length > 0) || 
+                         (imagensTemp[`${index}_temp`] && imagensTemp[`${index}_temp`].length > 0) ||
+                         (imagensTemp[`${index}_umidade`] && imagensTemp[`${index}_umidade`].length > 0);
+        
+        if (!texto && !temFotos && !etapa.obrigatorio) {
+            relatorioAtual.etapas[index] = null;
+            if (index + 1 < etapas.length) {
+                renderizarEtapa(etapas, index + 1);
+            } else {
+                renderizarMateriaisEquipamentos(etapas);
+            }
+            return;
+        }
+        
+        let dadosEtapa = {
+            id: etapa.id,
+            label: etapa.label,
+            texto: texto,
+            obrigatorio: etapa.obrigatorio,
+            fotosMin: fotosMin,
+            imagens: imagensTemp[index] || [],
+            isLaminacao: etapa.isLaminacao || false,
+            isTempUmidade: etapa.isTempUmidade || false
+        };
+
+        // VALIDAÇÃO TEMPERATURA/UMIDADE
+        if (etapa.isTempUmidade) {
+            const temp = document.getElementById(`temp_${index}`)?.value.trim() || '';
+            const umidade = document.getElementById(`umidade_${index}`)?.value.trim() || '';
+            const tempFotos = (imagensTemp[`${index}_temp`] || []).length;
+            const umidadeFotos = (imagensTemp[`${index}_umidade`] || []).length;
+            
+            if (etapa.obrigatorio || temp || umidade || tempFotos > 0 || umidadeFotos > 0) {
+                if (!temp || !umidade) {
+                    alert(tf('alertTempUmidadeObrigatorio', {label: etapaLabel(etapa)}));
+                    return;
+                }
+                if (tempFotos < 1) {
+                    alert(tf('alertFotoTemperatura', {label: etapaLabel(etapa)}));
+                    return;
+                }
+                if (umidadeFotos < 1) {
+                    alert(tf('alertFotoUmidade', {label: etapaLabel(etapa)}));
+                    return;
+                }
+            }
+            dadosEtapa.temperatura = temp;
+            dadosEtapa.umidade = umidade;
+            dadosEtapa.imagensTemp = imagensTemp[`${index}_temp`] || [];
+            dadosEtapa.imagensUmidade = imagensTemp[`${index}_umidade`] || [];
+        }
+
+        // VALIDAÇÃO LAMINAÇÃO
+        if (etapa.isLaminacao) {
+            const tipoCamada = document.getElementById(`tipoCamada_${index}`)?.value || '';
+            const isObrigatorioCamada = etapa.camadaNum <= 2;
+            
+            if (isObrigatorioCamada && !tipoCamada) {
+                alert(tf('alertCamadaObrigatoria', {n: etapa.camadaNum}));
+                return;
+            }
+            if (!isObrigatorioCamada && texto && !tipoCamada) {
+                alert(tf('alertCamadaSemTipo', {n: etapa.camadaNum}));
+                return;
+            }
+            dadosEtapa.tipoCamada = tipoCamada;
+            dadosEtapa.camadaNum = etapa.camadaNum;
+            dadosEtapa.isLaminacao = true;
+        }
+        
+        const temImagens = (dadosEtapa.imagens && dadosEtapa.imagens.length > 0) ||
+                           (dadosEtapa.imagensTemp && dadosEtapa.imagensTemp.length > 0) ||
+                           (dadosEtapa.imagensUmidade && dadosEtapa.imagensUmidade.length > 0);
+        
+        if (dadosEtapa.texto || temImagens) {
+            relatorioAtual.etapas[index] = dadosEtapa;
+        } else {
+            relatorioAtual.etapas[index] = null;
+        }
+        
+        if (index + 1 < etapas.length) {
+            renderizarEtapa(etapas, index + 1);
+        } else {
+            renderizarMateriaisEquipamentos(etapas);
+        }
+        salvarProgressoAPI('em_processo');
+    }
+
+    // ==========================================
+    // FUNÇÃO 18 - ETAPA ANTERIOR
+    // ==========================================
+    function etapaAnterior(index) {
+        const etapas = filtrarEtapas(defeitoSelecionado);
+        renderizarEtapa(etapas, index - 1);
+    }
+    // ==========================================
+    // FUNÇÃO 19 - RENDERIZAR MATERIAIS E EQUIPAMENTOS
+    // ==========================================
+    function renderizarMateriaisEquipamentos(etapas) {
+        const container = document.getElementById('wizardContainer');
+        const materiais = relatorioAtual.materiais || [];
+        const equipamentos = relatorioAtual.equipamentos || [];
+
+        let optsMateriais = `<option value="">${t('selecioneOption')}</option>`;
+        listaMateriaisQuimicos.forEach(m => {
+            optsMateriais += `<option value="${m}">${m}</option>`;
+        });
+
+        let linhasMateriais = '';
+        for (let i = 0; i < TOTAL_LINHAS_MATERIAIS; i++) {
+            const linha = materiais[i] || {};
+            let opts = optsMateriais;
+            if (linha.material) {
+                opts = opts.replace(`value="${linha.material}"`, `value="${linha.material}" selected`);
+            }
+            linhasMateriais += `
+                <tr>
+                    <td><select id="material_${i}">${opts}</select></td>
+                    <td><input type="date" id="validadeMaterial_${i}" value="${linha.validade || ''}"></td>
+                </tr>
+            `;
+        }
+
+        let linhasEquipamentos = '';
+        for (let i = 0; i < TOTAL_LINHAS_EQUIPAMENTOS; i++) {
+            const linha = equipamentos[i] || {};
+            linhasEquipamentos += `
+                <tr>
+                    <td><input type="text" id="equipamento_${i}" placeholder="${t('nomeEquipamentoPlaceholder')}" value="${linha.equipamento || ''}"></td>
+                    <td><input type="text" id="codigoEquipamento_${i}" placeholder="${t('codigoPlaceholder')}" value="${linha.codigo || ''}"></td>
+                    <td><input type="date" id="dataCalibracao_${i}" value="${linha.dataCalibracao || ''}"></td>
+                </tr>
+            `;
+        }
+
+        const html = `
+            <div class="etapa-wizard">
+                <div class="etapa-header-wizard">
+                    <div class="etapa-titulo">
+                        <h3>${t('materiaisEquipTitulo')}</h3>
+                        <h4>${t('materiaisEquipSubtitulo')}</h4>
+                    </div>
+                    <div class="nav-botoes-wizard">
+                        <button class="btn-anterior-nav" onclick="voltarParaUltimaEtapa()">${t('anteriorBtn')}</button>
+                        <button class="btn-proximo" onclick="avancarMateriaisEquipamentos()">${t('finalizarBtn')}</button>
+                    </div>
+                </div>
+
+                <label>${t('materiaisQuimicosLabel')}</label>
+                <table class="tabela-wizard">
+                    <thead>
+                        <tr>
+                            <th>${t('materialColuna')}</th>
+                            <th>${t('validadeColuna')}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${linhasMateriais}
+                    </tbody>
+                </table>
+
+                <label style="margin-top:25px;">${t('equipamentosLabel')}</label>
+                <table class="tabela-wizard">
+                    <thead>
+                        <tr>
+                            <th>${t('equipamentoColuna')}</th>
+                            <th>${t('codigoColuna')}</th>
+                            <th>${t('calibracaoColuna')}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${linhasEquipamentos}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        container.innerHTML = html;
+    }
+
+    // ==========================================
+    // FUNÇÃO 20 - AVANÇAR MATERIAIS E EQUIPAMENTOS
+    // ==========================================
+    function avancarMateriaisEquipamentos() {
+        const etapas = filtrarEtapas(defeitoSelecionado);
+        const materiais = [];
+        for (let i = 0; i < TOTAL_LINHAS_MATERIAIS; i++) {
+            const material = document.getElementById(`material_${i}`)?.value || '';
+            const validade = document.getElementById(`validadeMaterial_${i}`)?.value || '';
+            if (material || validade) {
+                materiais.push({ material, validade });
+            }
+        }
+
+        const equipamentos = [];
+        for (let i = 0; i < TOTAL_LINHAS_EQUIPAMENTOS; i++) {
+            const equipamento = document.getElementById(`equipamento_${i}`)?.value.trim() || '';
+            const codigo = document.getElementById(`codigoEquipamento_${i}`)?.value.trim() || '';
+            const dataCalibracao = document.getElementById(`dataCalibracao_${i}`)?.value || '';
+            if (equipamento || codigo || dataCalibracao) {
+                equipamentos.push({ equipamento, codigo, dataCalibracao });
+            }
+        }
+
+        relatorioAtual.materiais = materiais;
+        relatorioAtual.equipamentos = equipamentos;
+        renderizarResumo(etapas);
+        salvarProgressoAPI('em_processo');
+    }
+
+    // ==========================================
+    // FUNÇÃO 21 - VOLTAR PARA ÚLTIMA ETAPA
+    // ==========================================
+    function voltarParaUltimaEtapa() {
+        const etapas = filtrarEtapas(defeitoSelecionado);
+        renderizarEtapa(etapas, etapas.length - 1);
+    }
+
+        // ==========================================
+    // FUNÇÃO - RENDERIZAR RESUMO
+    // ==========================================
+    function renderizarResumo(etapas) {
+        const container = document.getElementById('wizardContainer');
+        
+        let etapasPreenchidas = [];
+        
+        if (relatorioAtual.generico) {
+            etapasPreenchidas = relatorioAtual.etapas.filter(e => {
+                const temNome = e.nome && e.nome.trim() !== '';
+                const temTexto = e.texto && e.texto.trim() !== '';
+                const temFotos = e.imagens && e.imagens.length > 0;
+                return temNome || temTexto || temFotos;
+            });
+        } else {
+            for (let i = 0; i < relatorioAtual.etapas.length; i++) {
+                const e = relatorioAtual.etapas[i];
+                if (!e) continue;
+                const temTexto = e.texto && e.texto.trim() !== '';
+                const temFotos = (e.imagens && e.imagens.length > 0) ||
+                                 (e.imagensTemp && e.imagensTemp.length > 0) ||
+                                 (e.imagensUmidade && e.imagensUmidade.length > 0);
+                if (temTexto || temFotos) {
+                    etapasPreenchidas.push(e);
+                }
+            }
+        }
+        
+        const totalImagens = etapasPreenchidas.reduce((acc, e) => {
+            return acc + (e.imagens ? e.imagens.length : 0) + 
+                   (e.imagensTemp ? e.imagensTemp.length : 0) + 
+                   (e.imagensUmidade ? e.imagensUmidade.length : 0);
+        }, 0);
+        
+        const tecnicos = window.dadosTecnicos || [];
+        const tecnicosHtml = tecnicos.length > 0 
+            ? tecnicos.map((tec, i) => `<span style="font-size:13px;">${i+1}. ${escapeHtml(tec.nome)} - ${escapeHtml(tec.funcao) || 'Role not provided'}</span><br>`).join('')
+            : '<span style="font-size:13px;">No technician provided</span>';
+        
+        let html = `
+            <div class="resumo-box">
+                <h3 style="color: #2C3E50; margin-bottom: 10px;">Report Summary</h3>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <div style="background: white; padding: 12px; border-radius: 6px; text-align: center;">
+                        <strong>${etapasPreenchidas.length}</strong>
+                        <p style="font-size: 12px; color: #666;">${relatorioAtual.generico ? 'Custom steps' : 'Total steps'}</p>
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 6px; text-align: center;">
+                        <strong>${totalImagens}</strong>
+                        <p style="font-size: 12px; color: #666;">Attached photos</p>
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 6px; text-align: center;">
+                        <strong>${relatorioAtual.generico ? 'Genérico' : (tipoReparo === 'interno' ? 'Interno' : 'Externo')}</strong>
+                        <p style="font-size: 12px; color: #666;">Repair type</p>
+                    </div>
+                </div>
+                
+                <hr style="margin: 15px 0;">
+                
+                <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
+                    <strong>Damage:</strong> ${escapeHtml(defeitoSelecionado)}
+                </div>
+                
+                <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
+                    <strong>Technicians:</strong><br>
+                    ${tecnicosHtml}
+                </div>
+                
+                <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
+                    <strong>Customer Data:</strong><br>
+                    ${Object.entries(masterData).map(([key, value]) => {
+                        const label = camposMasterData.find(c => c.id === key)?.label || key;
+                        return `<span style="font-size: 13px;">${escapeHtml(label)}: ${escapeHtml(value) || '-'}</span><br>`;
+                    }).join('')}
+                </div>
+                
+                <hr style="margin: 15px 0;">
+                <h4 style="color: #2C3E50; margin-bottom: 10px;">${relatorioAtual.generico ? 'Custom Steps' : 'Repair Steps'}</h4>
+        `;
+        
+        for (let i = 0; i < etapasPreenchidas.length; i++) {
+            const etapa = etapasPreenchidas[i];
+            if (!etapa) continue;
+            
+            if (etapa.temperatura || etapa.umidade) {
+                const fotosTemp = etapa.imagensTemp || [];
+                const fotosUmidade = etapa.imagensUmidade || [];
+                
+                html += `
+                    <div class="item">
+                        <strong>${etapa.label}</strong>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
+                            <div style="background: #fff5f5; padding: 8px; border-radius: 4px; border: 1px solid #fcc;">
+<strong>Temperature:</strong> ${escapeHtml(etapa.temperatura) || 'N/A'}
+                                ${fotosTemp.length ? `
+                                    <div style="display: grid; grid-template-columns: repeat(${fotosTemp.length === 1 ? 1 : 2}, 1fr); gap: 10px; margin-top:5px;">
+                                        ${fotosTemp.map(img => `
+                                            <div style="background: white; border-radius: 6px; padding: 4px; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; overflow: hidden; aspect-ratio: 4/3;">
+                                                <img src="${img}" alt="Temperature" style="width:100%; height:100%; object-fit:contain; border-radius:4px;">
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : '<span style="color:#999;font-size:11px;"> No photo</span>'}
+                            </div>
+                            <div style="background: #f0f8ff; padding: 8px; border-radius: 4px; border: 1px solid #b8d4e3;">
+<strong>Humidity:</strong> ${escapeHtml(etapa.umidade) || 'N/A'}
+                                ${fotosUmidade.length ? `
+                                    <div style="display: grid; grid-template-columns: repeat(${fotosUmidade.length === 1 ? 1 : 2}, 1fr); gap: 10px; margin-top:5px;">
+                                        ${fotosUmidade.map(img => `
+                                            <div style="background: white; border-radius: 6px; padding: 4px; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; overflow: hidden; aspect-ratio: 4/3;">
+                                                <img src="${img}" alt="Humidity" style="width:100%; height:100%; object-fit:contain; border-radius:4px;">
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : '<span style="color:#999;font-size:11px;"> No photo</span>'}
+                            </div>
+                        </div>
+                        ${etapa.texto ? `<p style="margin-top: 8px;">${escapeHtml(etapa.texto)}</p>` : ''}
+                    </div>
+                `;
+                continue;
+            }
+            
+            if (relatorioAtual.generico) {
+                const nomeExibido = etapa.nome || 'Etapa sem nome';
+                html += `
+                    <div class="item">
+                        <strong>${escapeHtml(nomeExibido)}</strong>
+                        ${etapa.texto ? `<p style="margin-top: 5px;">${escapeHtml(etapa.texto)}</p>` : ''}
+                        ${etapa.imagens && etapa.imagens.length ? `
+                            <div style="display: grid; grid-template-columns: repeat(${etapa.imagens.length === 1 ? 1 : 2}, 1fr); gap: 10px; margin-top:5px;">
+                                ${etapa.imagens.map(img => `
+                                    <div style="background: white; border-radius: 6px; padding: 4px; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; overflow: hidden; aspect-ratio: 4/3;">
+                                        <img src="${img}" alt="Foto" style="width:100%; height:100%; object-fit:contain; border-radius:4px;">
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : '<span style="color:#999;font-size:12px;">No photos</span>'}
+                    </div>
+                `;
+                continue;
+            }
+            
+            const isLam = etapa.isLaminacao === true || (etapa.label && etapa.label.includes('Lamination layer'));
+            if (isLam) {
+                let proximaEtapa = null;
+                let proximoIndex = -1;
+                for (let j = i + 1; j < etapasPreenchidas.length; j++) {
+                    const e = etapasPreenchidas[j];
+                    const eIsLam = e.isLaminacao === true || (e.label && e.label.includes('Lamination layer'));
+                    if (eIsLam) {
+                        proximaEtapa = e;
+                        proximoIndex = j;
+                        break;
+                    }
+                }
+                
+                if (proximaEtapa) {
+                    html += `
+                        <div class="item" style="margin-bottom: 15px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #dee2e6;">
+                                    <strong>${etapa.label}</strong>
+                                    ${etapa.tipoCamada ? `<div style="font-size:13px; color:#555; margin: 4px 0;">Type: ${escapeHtml(etapa.tipoCamada)}</div>` : ''}
+                                    ${etapa.texto ? `<p style="margin-top: 5px; font-size:13px;">${escapeHtml(etapa.texto)}</p>` : ''}
+                                    ${etapa.imagens && etapa.imagens.length ? `
+                                        <div style="display: grid; grid-template-columns: repeat(${etapa.imagens.length === 1 ? 1 : 2}, 1fr); gap: 10px; margin-top:5px;">
+                                            ${etapa.imagens.map(img => `
+                                                <div style="background: white; border-radius: 6px; padding: 4px; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; overflow: hidden; aspect-ratio: 4/3;">
+                                                    <img src="${img}" alt="Foto" style="width:100%; height:100%; object-fit:contain; border-radius:4px;">
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    ` : '<span style="color:#999;font-size:12px;">No photos</span>'}
+                                </div>
+                                <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #dee2e6;">
+                                    <strong>${proximaEtapa.label}</strong>
+                                    ${proximaEtapa.tipoCamada ? `<div style="font-size:13px; color:#555; margin: 4px 0;">Type: ${escapeHtml(proximaEtapa.tipoCamada)}</div>` : ''}
+                                    ${proximaEtapa.texto ? `<p style="margin-top: 5px; font-size:13px;">${escapeHtml(proximaEtapa.texto)}</p>` : ''}
+                                    ${proximaEtapa.imagens && proximaEtapa.imagens.length ? `
+                                        <div style="display: grid; grid-template-columns: repeat(${proximaEtapa.imagens.length === 1 ? 1 : 2}, 1fr); gap: 10px; margin-top:5px;">
+                                            ${proximaEtapa.imagens.map(img => `
+                                                <div style="background: white; border-radius: 6px; padding: 4px; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; overflow: hidden; aspect-ratio: 4/3;">
+                                                    <img src="${img}" alt="Foto" style="width:100%; height:100%; object-fit:contain; border-radius:4px;">
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    ` : '<span style="color:#999;font-size:12px;">No photos</span>'}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    i = proximoIndex;
+                    continue;
+                } else {
+                    html += `
+                        <div class="item" style="margin-bottom: 15px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #dee2e6;">
+                                    <strong>${etapa.label}</strong>
+                                    ${etapa.tipoCamada ? `<div style="font-size:13px; color:#555; margin: 4px 0;">Type: ${escapeHtml(etapa.tipoCamada)}</div>` : ''}
+                                    ${etapa.texto ? `<p style="margin-top: 5px; font-size:13px;">${escapeHtml(etapa.texto)}</p>` : ''}
+                                    ${etapa.imagens && etapa.imagens.length ? `
+                                        <div style="display: grid; grid-template-columns: repeat(${etapa.imagens.length === 1 ? 1 : 2}, 1fr); gap: 10px; margin-top:5px;">
+                                            ${etapa.imagens.map(img => `
+                                                <div style="background: white; border-radius: 6px; padding: 4px; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; overflow: hidden; aspect-ratio: 4/3;">
+                                                    <img src="${img}" alt="Foto" style="width:100%; height:100%; object-fit:contain; border-radius:4px;">
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    ` : '<span style="color:#999;font-size:12px;">No photos</span>'}
+                                </div>
+                                <div></div>
+                            </div>
+                        </div>
+                    `;
+                    continue;
+                }
+            }
+            
+            html += `
+                <div class="item">
+                    <strong>${etapa.label}</strong>
+                    ${etapa.texto ? `<p style="margin-top: 5px;">${escapeHtml(etapa.texto)}</p>` : ''}
+                    ${etapa.imagens && etapa.imagens.length ? `
+                        <div style="display: grid; grid-template-columns: repeat(${etapa.imagens.length === 1 ? 1 : 2}, 1fr); gap: 10px; margin-top:5px;">
+                            ${etapa.imagens.map(img => `
+                                <div style="background: white; border-radius: 6px; padding: 4px; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; overflow: hidden; aspect-ratio: 4/3;">
+                                    <img src="${img}" alt="Foto" style="width:100%; height:100%; object-fit:contain; border-radius:4px;">
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : '<span style="color:#999;font-size:12px;">No photos</span>'}
+                </div>
+            `;
+        }
+        
+        const materiaisPreenchidos = (relatorioAtual.materiais || []).filter(m => m.material || m.validade);
+        if (materiaisPreenchidos.length > 0) {
+            html += `
+                <hr style="margin: 15px 0;">
+                <h4 style="color: #2C3E50; margin-bottom: 10px;">Chemical Materials</h4>
+                <table class="tabela-wizard" style="background:white;">
+                    <thead><tr><th>Material</th><th>Expiry Date</th></tr></thead>
+                    <tbody>
+                        ${materiaisPreenchidos.map(m => `
+                            <tr><td>${escapeHtml(m.material) || '-'}</td><td>${escapeHtml(m.validade) || '-'}</td></tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+        
+        const equipamentosPreenchidos = (relatorioAtual.equipamentos || []).filter(e => e.equipamento || e.codigo || e.dataCalibracao);
+        if (equipamentosPreenchidos.length > 0) {
+            html += `
+                <h4 style="color: #2C3E50; margin: 15px 0 10px;">Equipment</h4>
+                <table class="tabela-wizard" style="background:white;">
+                    <thead><tr><th>Equipment</th><th>Code</th><th>Calibration Date</th></tr></thead>
+                    <tbody>
+                        ${equipamentosPreenchidos.map(e => `
+                            <tr><td>${escapeHtml(e.equipamento) || '-'}</td><td>${escapeHtml(e.codigo) || '-'}</td><td>${escapeHtml(e.dataCalibracao) || '-'}</td></tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+        
+        html += `
+                <div class="acoes-resumo">
+                    <button class="btn-editar" onclick="editarWizard()">${t('editarBtn')}</button>
+                    <button class="btn-submit" onclick="gerarRelatorioCompleto()">${t('gerarRelatorioBtn')}</button>
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = html;
+    }
+
+    // ==========================================
+    // FUNÇÃO - EDITAR WIZARD
+    // ==========================================
+    function editarWizard() {
+        if (relatorioAtual.generico) {
+            renderizarWizardGenerico();
+            return;
+        }
+        const etapas = filtrarEtapas(defeitoSelecionado);
+        renderizarEtapa(etapas, 0);
+    }
+
+    // ==========================================
+    // FUNÇÃO 24 - GERAR RELATÓRIO COMPLETO
+    // ==========================================
+    function montarCabecalhoRelatorioBlade() {
+        const dataAtual = new Date().toLocaleDateString('en-US');
+        const masterDataLinhas = Object.entries(masterData).map(([key, value]) => {
+            const campo = camposMasterData.find(c => c.id === key);
+            const label = campo ? campo.label : key;
+            return `<tr><td style="padding:4px 8px; font-weight:bold; color:#555; width:40%;">${escapeHtml(label)}</td><td style="padding:4px 8px;">${escapeHtml(value) || '-'}</td></tr>`;
+        }).join('');
+
+        return `
+            <div style="font-family: Arial, sans-serif; max-width:1100px; margin:0 auto; padding:30px 30px 0;">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #007bff; padding-bottom:15px; margin-bottom:20px;">
+                    <div>
+                        <div style="font-size:24px; font-weight:900; color:#007bff; letter-spacing:1px;">SYNVORA LABS</div>
+                        <div style="font-size:11px; color:#666; letter-spacing:1px;">SMART OPERATIONS PLATFORM</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <h1 style="margin:0; color:#2C3E50; font-size:22px;">Blade Repair Report</h1>
+                        <div style="color:#888; font-size:13px;">${dataAtual}</div>
+                    </div>
+                </div>
+                <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
+                    ${masterDataLinhas}
+                </table>
+            </div>
+        `;
+    }
+
+    function gerarRelatorioCompleto() {
+        const resumoBox = document.querySelector('.resumo-box');
+        if (!resumoBox) {
+            alert('Abra o resumo do relatório antes de gerar.');
+            return;
+        }
+
+        // Reaproveita o mesmo conteúdo já exibido no resumo, removendo os botões de ação
+        const clone = resumoBox.cloneNode(true);
+        const acoes = clone.querySelector('.acoes-resumo');
+        if (acoes) acoes.remove();
+        const painelFinalizacaoClone = clone.querySelector('#painelFinalizacaoPdf');
+        if (painelFinalizacaoClone) painelFinalizacaoClone.remove();
+
+        const htmlRelatorio = montarCabecalhoRelatorioBlade() + `
+            <div style="font-family: Arial, sans-serif; max-width:1100px; margin:0 auto; padding:0 30px 30px;">
+                ${clone.innerHTML}
+            </div>
+        `;
+
+        abrirJanelaImpressaoBlade(htmlRelatorio);
+        salvarProgressoAPI('em_processo');
+        mostrarPainelFinalizacao();
+    }
+
+    function abrirJanelaImpressaoBlade(htmlRelatorio) {
+        const win = window.open('', '_blank', 'width=1100,height=800');
+        if (!win) {
+            alert('O navegador bloqueou a abertura de nova janela. Permita pop-ups para esta página.');
+            return;
+        }
+        win.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Blade Repair Report</title>
+                <style>
+                    body { margin:0; padding:20px; }
+                    @media print {
+                        body { padding:0; }
+                        .btn-print { display:none; }
+                    }
+                </style>
+            </head>
+            <body>
+                ${htmlRelatorio}
+                <div style="text-align:center; margin-top:20px;">
+                    <button class="btn-print" onclick="window.print()" style="padding:12px 40px; background:#28a745; color:white; border:none; border-radius:6px; font-size:16px; cursor:pointer; font-weight:bold;">
+Imprimir / Salvar PDF
+                    </button>
+                    <button class="btn-print" onclick="window.close()" style="padding:12px 40px; background:#6c757d; color:white; border:none; border-radius:6px; font-size:16px; cursor:pointer; font-weight:bold; margin-left:10px;">
+Fechar
+                    </button>
+                </div>
+                <script>
+                    window.onload = function() {
+                        setTimeout(() => window.print(), 500);
+                    };
+                <\/script>
+            </body>
+            </html>
+        `);
+        win.document.close();
+    }
+
+    // ==========================================
+    // ANEXAR PDF FINAL E CONCLUIR O RELATÓRIO
+    // ==========================================
+    function mostrarPainelFinalizacao() {
+        const resumoBox = document.querySelector('.resumo-box');
+        if (!resumoBox || document.getElementById('painelFinalizacaoPdf')) return;
+
+        const div = document.createElement('div');
+        div.id = 'painelFinalizacaoPdf';
+        div.style = 'background:#fff9e6; border:1px solid #ffe08a; border-radius:8px; padding:15px; margin-top:15px;';
+        div.innerHTML = `
+            <strong>Anexar PDF gerado e finalizar</strong>
+            <p style="font-size:13px; color:#666; margin:6px 0 10px;">
+                Depois de salvar o PDF na janela de impressão, selecione o arquivo aqui para concluir o relatório
+                (isso também libera as fotos temporárias do Drive).
+            </p>
+            <input type="file" id="inputPdfFinal" accept="application/pdf">
+            <button class="btn-submit" style="margin-left:10px;" onclick="anexarPdfEFinalizar()">Finalizar Relatório</button>
+            <div id="statusFinalizacao" style="margin-top:8px; font-size:13px; color:#888;"></div>
+        `;
+        resumoBox.appendChild(div);
+    }
+
+    async function anexarPdfEFinalizar() {
+        if (!podeEditar()) { alert('Você não tem permissão para finalizar relatórios.'); return; }
+
+        const input = document.getElementById('inputPdfFinal');
+        const status = document.getElementById('statusFinalizacao');
+        if (!input.files || !input.files[0]) {
+            alert('Selecione o arquivo PDF salvo antes de finalizar.');
+            return;
+        }
+
+        const token = getTokenDaURL();
+        if (!relatorioIdAtual) {
+            await salvarProgressoAPI('em_processo');
+        }
+        if (!relatorioIdAtual) {
+            status.textContent = 'Não foi possível identificar o relatório. Tente salvar novamente.';
+            return;
+        }
+
+        const file = input.files[0];
+        status.textContent = 'Enviando PDF...';
+
+        try {
+            const base64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+
+            const respPdf = await fetch(REPORTFLOW_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    acao: 'uploadPdf',
+                    token: token,
+                    empresaId: empresaIdAtual,
+                    relatorioId: relatorioIdAtual,
+                    pdfBase64: base64,
+                    nomeArquivo: relatorioIdAtual + '.pdf'
+                })
+            });
+            const resultadoPdf = await respPdf.json();
+            if (!resultadoPdf.success) {
+                status.textContent = 'Erro ao enviar PDF: ' + (resultadoPdf.error || '');
+                return;
+            }
+
+            status.textContent = 'Limpando fotos temporárias...';
+            await fetch(REPORTFLOW_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ acao: 'limparFotosRelatorio', token: token, relatorioId: relatorioIdAtual, empresaId: empresaIdAtual })
+            });
+
+            status.textContent = 'Finalizando relatório...';
+            const respFinal = await fetch(REPORTFLOW_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    acao: 'salvarProgresso',
+                    token: token,
+                    empresaId: empresaIdAtual,
+                    relatorio: {
+                        id: relatorioIdAtual,
+                        modulo: 'blade',
+                        titulo: tituloRelatorioAtual(),
+                        status: 'concluido',
+                        pdfUrl: resultadoPdf.url,
+                        dados: capturarEstadoBlade()
+                    }
+                })
+            });
+            const resultadoFinal = await respFinal.json();
+            if (!resultadoFinal.success) {
+                status.textContent = 'Erro ao finalizar: ' + (resultadoFinal.error || '');
+                return;
+            }
+
+            alert('Relatório finalizado com sucesso!');
+            irParaPainel();
+        } catch (e) {
+            status.textContent = 'Erro ao finalizar: ' + e.toString();
+        }
+    }
+
+    // ==========================================
+    // FUNÇÃO 25 - REDIMENSIONAR IMAGEM
+    // ==========================================
+    function redimensionarImagem(file, maxLargura = 800, qualidade = 0.85) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const proporcao = img.height / img.width;
+                    const largura = Math.min(img.width, maxLargura);
+                    const altura = largura * proporcao;
+                    
+                    canvas.width = largura;
+                    canvas.height = altura;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, largura, altura);
+                    
+                    resolve(canvas.toDataURL('image/jpeg', qualidade));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // ==========================================
+    // TIMESHEET - GERAR RELATÓRIO
+    // ==========================================
+    function gerarRelatorioTimesheet() {
+        // Salva dados atuais
+        salvarObservacaoTimesheet();
+        salvarAssinaturaTimesheet();
+        
+        const semana = dadosSemanaAtual();
+        const tecnicos = [];
+        for (let i = 1; i <= 3; i++) {
+            const nome = document.getElementById(`tecnico${i}_nome`)?.value.trim() || '';
+            const funcao = document.getElementById(`tecnico${i}_funcao`)?.value.trim() || '';
+            if (nome || funcao) {
+                tecnicos.push({ nome, funcao });
+            }
+        }
+        
+        const tecnicoSelecionado = tecnicos[tsTecnicoAtual]?.nome || 'Técnico não informado';
+        const dadosCliente = salvarTsMasterData();
+        
+        // Monta o conteúdo do relatório
+        const diasLabel = [t('tsSeg'), t('tsTer'), t('tsQua'), t('tsQui'), t('tsSex'), t('tsSab'), t('tsDom')];
+        let tabelaHtml = `
+            <table style="width:100%; border-collapse:collapse; font-family:Arial, sans-serif; font-size:12px;">
+                <thead>
+                    <tr style="background:#007bff; color:white;">
+                        <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">Dia</th>
+                        <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">Atividade/Projeto</th>
+                        <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">Início</th>
+                        <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">Fim</th>
+                        <th style="padding:8px; border:1px solid #dee2e6; text-align:center;">Intervalo</th>
+                        <th style="padding:8px; border:1px solid #dee2e6; text-align:center;">Standby (min)</th>
+                        <th style="padding:8px; border:1px solid #dee2e6; text-align:center;">Horas</th>
+                        <th style="padding:8px; border:1px solid #dee2e6; text-align:center;">Extra</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        let totalSemana = 0;
+        let totalExtra = 0;
+        
+        for (let i = 0; i < 7; i++) {
+            const dia = semana.dias[i];
+            const intervaloFixo = 60;
+            const horas = calcularHoras(dia.inicio, dia.fim, intervaloFixo);
+            const extra = horas > 8 ? horas - 8 : 0;
+            totalSemana += horas;
+            totalExtra += extra;
+            
+            tabelaHtml += `
+                <tr>
+                    <td style="padding:6px; border:1px solid #dee2e6; font-weight:bold;">${diasLabel[i]}</td>
+                    <td style="padding:6px; border:1px solid #dee2e6;">${escapeHtml(dia.atividade) || '-'}</td>
+                    <td style="padding:6px; border:1px solid #dee2e6;">${dia.inicio || '-'}</td>
+                    <td style="padding:6px; border:1px solid #dee2e6;">${dia.fim || '-'}</td>
+                    <td style="padding:6px; border:1px solid #dee2e6; text-align:center;">1h</td>
+                    <td style="padding:6px; border:1px solid #dee2e6; text-align:center;">${dia.standby || 0}</td>
+                    <td style="padding:6px; border:1px solid #dee2e6; text-align:center; font-weight:bold;">${horas.toFixed(2)}h</td>
+                    <td style="padding:6px; border:1px solid #dee2e6; text-align:center; ${extra > 0 ? 'color:#dc3545; font-weight:bold;' : 'color:#aaa;'}">${extra > 0 ? extra.toFixed(2) + 'h' : '-'}</td>
+                </tr>
+            `;
+        }
+        
+        tabelaHtml += `
+                </tbody>
+                <tfoot>
+                    <tr style="background:#f0f4f8; font-weight:bold;">
+                        <td colspan="6" style="padding:8px; border:1px solid #dee2e6; text-align:right;">Total da semana</td>
+                        <td style="padding:8px; border:1px solid #dee2e6; text-align:center;">${totalSemana.toFixed(2)}h</td>
+                        <td style="padding:8px; border:1px solid #dee2e6; text-align:center; color:${totalExtra > 0 ? '#dc3545' : '#aaa'};">${totalExtra > 0 ? totalExtra.toFixed(2) + 'h' : '-'}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        `;
+        
+        const observacoes = escapeHtml(semana.observacoes || '');
+        const assinaturaTecnico = escapeHtml(semana.assinaturaTecnico.nome || '');
+        const assinaturaCliente = escapeHtml(semana.assinaturaCliente.nome || '');
+        
+        const htmlRelatorio = `
+            <div style="font-family:Arial, sans-serif; max-width:1100px; margin:0 auto; padding:30px; background:white;">
+                <div style="text-align:center; padding-bottom:20px; border-bottom:2px solid #007bff; margin-bottom:20px;">
+                    <h1 style="color:#007bff; margin:0;">TimeSheet Report</h1>
+                </div>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px; background:#f8f9fa; padding:15px; border-radius:8px;">
+                    <div><strong>Técnico:</strong> ${escapeHtml(tecnicoSelecionado)}</div>
+                    <div><strong>Semana:</strong> ${formatarDataCurta(tsSemanaBase)} - ${formatarDataCurta(new Date(tsSemanaBase.getTime() + 6 * 24 * 60 * 60 * 1000))}</div>
+                </div>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px; margin-bottom:20px; background:#e9ecef; padding:15px; border-radius:8px;">
+                    ${Object.entries(dadosCliente).map(([key, value]) => {
+                        const label = camposMasterData.find(c => c.id === key)?.label || key;
+                        return `<div><strong>${escapeHtml(label)}:</strong> ${escapeHtml(value) || '-'}</div>`;
+                    }).join('')}
+                </div>
+                
+                ${tabelaHtml}
+                
+                ${observacoes ? `
+                    <div style="margin-top:20px; padding:15px; background:#f8f9fa; border-radius:8px;">
+                        <strong>Observações:</strong><br>
+                        ${observacoes}
+                    </div>
+                ` : ''}
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:40px; margin-top:30px; padding-top:20px; border-top:1px solid #dee2e6;">
+                    <div style="text-align:center;">
+                        <div style="border-top:1px solid #333; padding-top:8px; width:80%; margin:0 auto;">
+                            ${assinaturaTecnico || '_________________________'}
+                        </div>
+                        <div style="font-size:12px; color:#666; margin-top:4px;">Assinatura do Técnico</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="border-top:1px solid #333; padding-top:8px; width:80%; margin:0 auto;">
+                            ${assinaturaCliente || '_________________________'}
+                        </div>
+                        <div style="font-size:12px; color:#666; margin-top:4px;">Assinatura do Cliente/Responsável</div>
+                    </div>
+                </div>
+                
+                <div style="text-align:center; margin-top:30px; font-size:11px; color:#999; border-top:1px solid #dee2e6; padding-top:15px;">
+                    ReportFlow - Relatório gerado em ${new Date().toLocaleDateString('pt-BR')}
+                </div>
+            </div>
+        `;
+        
+        // Pergunta se o Dashboard deve ser incluído na impressão (página extra)
+        showConfirmModal(
+            t('confirmIncluirDashboard'),
+            () => abrirJanelaImpressaoTimesheet(htmlRelatorio, true),
+            () => abrirJanelaImpressaoTimesheet(htmlRelatorio, false)
+        );
+    }
+
+    function abrirJanelaImpressaoTimesheet(htmlRelatorio, incluirDashboard) {
+        let htmlDashboard = '';
+        if (incluirDashboard) {
+            const dados = calcularDadosDashboardTimesheet();
+            const graficosHtml = construirGraficosDashboardHTML(dados, { largura: 460, altura: 230 });
+            htmlDashboard = `
+                <div style="font-family:Arial, sans-serif; max-width:1100px; margin:0 auto; padding:30px; background:white; page-break-before: always;">
+                    <div style="text-align:center; padding-bottom:20px; border-bottom:2px solid #007bff; margin-bottom:20px;">
+                        <h1 style="color:#007bff; margin:0;">${t('dashboardTitulo')}</h1>
+                    </div>
+                    ${graficosHtml}
+                </div>
+            `;
+        }
+
+        // Abre janela para impressão/PDF
+        const win = window.open('', '_blank', 'width=1100,height=800');
+        if (win) {
+            win.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>TimeSheet Report</title>
+                    <style>
+                        body { margin:0; padding:20px; }
+                        @media print {
+                            body { padding:0; }
+                            .btn-print { display:none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${htmlRelatorio}
+                    ${htmlDashboard}
+                    <div style="text-align:center; margin-top:20px;">
+                        <button class="btn-print" onclick="window.print()" style="padding:12px 40px; background:#28a745; color:white; border:none; border-radius:6px; font-size:16px; cursor:pointer; font-weight:bold;">
+Imprimir / Salvar PDF
+                        </button>
+                        <button class="btn-print" onclick="window.close()" style="padding:12px 40px; background:#6c757d; color:white; border:none; border-radius:6px; font-size:16px; cursor:pointer; font-weight:bold; margin-left:10px;">
+Fechar
+                        </button>
+                    </div>
+                    <script>
+                        // Auto-print após carregar
+                        window.onload = function() {
+                            // Pequeno delay para garantir renderização
+                            setTimeout(() => window.print(), 500);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            win.document.close();
+        } else {
+            alert('O navegador bloqueou a abertura de nova janela. Permita pop-ups para esta página.');
+        }
+    }
+
+    // ==========================================
+    // INICIALIZAÇÃO
+    // ==========================================
+    document.addEventListener('DOMContentLoaded', async function() {
+        const acessoLiberado = await validarAcessoFlowsuite();
+        if (!acessoLiberado) {
+            bloquearAcesso();
+            return;
+        }
+        aplicarIdioma();
+        renderizarMasterData();
+        irParaPainel();
+        iniciarRevalidacaoPeriodicaSessao();
+        console.log('Blade Repair - ReportFlow carregado!');
+        console.log('Total de etapas:', todasEtapas.length);
+        console.log('Defeitos internos:', defeitosInternos.length);
+        console.log('Tipos de camada: BIAX, TRIAX, UD, CSM, COMBI, PEEL PLY');
+    });
+
+    // iniciarRevalidacaoPeriodicaSessao() agora vem do shared.js (padrão 15s,
+    // chama validarAcessoFlowsuite()/bloquearAcesso() daqui automaticamente)
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const paginaAtiva = document.querySelector('.pagina.ativa');
+            if (paginaAtiva) {
+                confirmarVoltarInicio();
+            }
+        }
+    });
+
+    console.log('Blade Repair carregado com sucesso!');
+    console.log('Atalhos: ESC = Voltar ao menu');
+</script>
+
+    <!-- MODAL DE CONFIRMAÇÃO CUSTOMIZADO -->
+    <div id="modalConfirm" class="modal-overlay oculto">
+        <div class="modal-box">
+            <p id="modalConfirmTexto"></p>
+            <div class="modal-botoes">
+                <button id="modalConfirmCancelar" class="modal-btn-cancelar"></button>
+                <button id="modalConfirmOk" class="modal-btn-ok"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DASHBOARD TIMESHEET -->
+    <div id="modalDashboardTs" class="modal-overlay oculto">
+        <div class="modal-dashboard-box">
+            <div class="modal-dashboard-header">
+                <h3 id="dashboardTsTitulo"></h3>
+                <button class="btn-fechar-dashboard" id="dashboardTsFechar" onclick="fecharDashboardTimesheet()"></button>
+            </div>
+            <div id="dashboardTsConteudo"></div>
+        </div>
+    </div>
+
+</body>
+</html>
