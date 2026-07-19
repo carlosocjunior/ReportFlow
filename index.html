@@ -2668,17 +2668,18 @@ const todasEtapas = [
         const standbyHoras = [];
         const horasAcumuladas = [];
         const standbyAcumulado = [];
-        let totalSemana = 0;
+        let totalSemana = 0; // tempo real do dia (não multiplica por equipe)
         let totalExtra = 0;
         let acumHoras = 0;
         let acumStandby = 0;
+        let totalSemanaCobravel = 0; // horas × equipe — só pro comparativo de faturamento
+        let totalExtraCobravel = 0;
 
         for (let i = 0; i < 7; i++) {
             const dia = semana.dias[i];
             const qtdTecnicos = (dia.tecnicos || []).length || 1;
-            const horasBase = calcularHoras(dia.inicio, dia.fim, 60);
-            const horas = horasBase * qtdTecnicos;
-            const extra = horasBase > 8 ? (horasBase - 8) * qtdTecnicos : 0;
+            const horas = calcularHoras(dia.inicio, dia.fim, 60);
+            const extra = horas > 8 ? horas - 8 : 0;
             const standby = (parseFloat(dia.standby) || 0) / 60;
             const temDados = !!(dia.inicio && dia.fim) || standby > 0;
 
@@ -2686,6 +2687,8 @@ const todasEtapas = [
             standbyHoras.push(standby);
             totalSemana += horas;
             totalExtra += extra;
+            totalSemanaCobravel += horas * qtdTecnicos;
+            totalExtraCobravel += extra * qtdTecnicos;
 
             acumHoras += horas;
             acumStandby += standby;
@@ -2696,14 +2699,15 @@ const todasEtapas = [
         }
         const horasNormais = totalSemana - totalExtra;
         const totalStandby = acumStandby;
+        const horasNormaisCobravel = totalSemanaCobravel - totalExtraCobravel;
 
         const seriesGrafico1 = [
             { nome: t('dashboardHorasTrabalhadas'), cor: '#007bff', valores: horasTrabalhadas },
             { nome: t('dashboardStandby'), cor: '#ffc107', valores: standbyHoras }
         ];
         const seriesGrafico2 = [
-            { nome: t('dashboardHorasNormais'), cor: '#28a745', valores: [horasNormais, null] },
-            { nome: t('dashboardHorasExtras'), cor: '#dc3545', valores: [null, totalExtra] }
+            { nome: t('dashboardHorasNormais'), cor: '#28a745', valores: [horasNormaisCobravel, null] },
+            { nome: t('dashboardHorasExtras'), cor: '#dc3545', valores: [null, totalExtraCobravel] }
         ];
         const seriesGrafico3 = [
             { nome: t('dashboardHorasTrabalhadas'), cor: '#007bff', valores: horasAcumuladas },
