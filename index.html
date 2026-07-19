@@ -1044,10 +1044,7 @@
             <button class="btn-anterior-nav" onclick="mudarSemanaTimesheet(1)"><span data-i18n="tsSemanaProxima">Próxima semana</span> →</button>
         </div>
 
-        <div style="margin-bottom:15px; max-width:320px;">
-            <label data-i18n="tsTecnicoLabel">Técnico</label>
-            <select id="tsTecnicoSelect" onchange="renderizarTimesheet()" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; font-size:14px;"></select>
-        </div>
+        <div id="tsEquipeLegenda" style="margin-bottom:15px; font-size:13px; color:#666;"></div>
 
         <div id="tsTabelaContainer"></div>
 
@@ -1580,6 +1577,9 @@
             tsSemanaProxima: 'Próxima semana',
             tsTecnicoLabel: 'Técnico',
             tsTecnicoNaoInformado: 'Técnico não informado',
+            tsEquipeDisponivel: 'Equipe disponível',
+            tsNenhumTecnicoInformado: 'Nenhum técnico informado na tela inicial',
+            tsEquipeColuna: 'Equipe',
             tsAtividadePlaceholder: 'Atividade/Projeto',
             tsDiaColuna: 'Dia',
             tsAtividadeColuna: 'Atividade/Projeto',
@@ -1703,6 +1703,9 @@
             tsSemanaProxima: 'Next week',
             tsTecnicoLabel: 'Technician',
             tsTecnicoNaoInformado: 'Technician not provided',
+            tsEquipeDisponivel: 'Available team',
+            tsNenhumTecnicoInformado: 'No technician entered on the main screen',
+            tsEquipeColuna: 'Team',
             tsAtividadePlaceholder: 'Activity/Project',
             tsDiaColuna: 'Day',
             tsAtividadeColuna: 'Activity/Project',
@@ -1826,6 +1829,9 @@
             tsSemanaProxima: 'Próxima semana',
             tsTecnicoLabel: 'Técnico',
             tsTecnicoNaoInformado: 'Técnico no informado',
+            tsEquipeDisponivel: 'Equipo disponible',
+            tsNenhumTecnicoInformado: 'Ningún técnico ingresado en la pantalla inicial',
+            tsEquipeColuna: 'Equipo',
             tsAtividadePlaceholder: 'Actividad/Proyecto',
             tsDiaColuna: 'Día',
             tsAtividadeColuna: 'Actividad/Proyecto',
@@ -2002,8 +2008,8 @@ const todasEtapas = [
 
     // Estado do TimeSheet
     let tsSemanaBase = getSegundaFeira(new Date()); // Date = segunda-feira da semana exibida
-    let tsTecnicoAtual = 0; // índice do técnico selecionado
-    let tsDados = {}; // { "tecnicoIdx_YYYY-MM-DD": { dias: [...7], observacoes, assinaturaTecnico, assinaturaCliente } }
+    let tsTecnicosDisponiveis = []; // [{nome, funcao}] — vem da tela inicial
+    let tsDados = {}; // { "YYYY-MM-DD": { dias: [...7], observacoes, assinaturaTecnico, assinaturaCliente } }
 
     // ==========================================
     // FUNÇÃO 1 - RENDERIZAR MASTER DATA
@@ -2144,17 +2150,12 @@ const todasEtapas = [
         
         tsSemanaBase = getSegundaFeira(new Date());
 
-        // Captura técnicos preenchidos na tela inicial
-        const tecnicos = [];
+        // Captura técnicos preenchidos na tela inicial (equipe disponível pra marcar por dia)
+        tsTecnicosDisponiveis = [];
         for (let i = 1; i <= 3; i++) {
             const nome = document.getElementById(`tecnico${i}_nome`)?.value.trim() || '';
-            if (nome) tecnicos.push(nome);
+            if (nome) tsTecnicosDisponiveis.push(nome);
         }
-        if (tecnicos.length === 0) tecnicos.push(t('tsTecnicoNaoInformado'));
-
-        const select = document.getElementById('tsTecnicoSelect');
-        select.innerHTML = tecnicos.map((nome, i) => `<option value="${i}">${nome}</option>`).join('');
-        tsTecnicoAtual = 0;
 
         renderizarTimesheet();
     }
@@ -2211,19 +2212,22 @@ const todasEtapas = [
     }
 
     function chaveAtual() {
-        tsTecnicoAtual = parseInt(document.getElementById('tsTecnicoSelect').value || 0);
-        return `${tsTecnicoAtual}_${chaveSemanaISO(tsSemanaBase)}`;
+        return chaveSemanaISO(tsSemanaBase);
     }
 
         function dadosSemanaAtual() {
         const chave = chaveAtual();
         if (!tsDados[chave]) {
             tsDados[chave] = {
-                dias: Array.from({ length: 7 }, () => ({ atividade: '', inicio: '', fim: '', intervalo: '', standby: '' })),
+                dias: Array.from({ length: 7 }, () => ({ atividade: '', inicio: '', fim: '', intervalo: '', standby: '', tecnicos: [] })),
                 observacoes: '',
                 assinaturaTecnico: { nome: '', data: '' },
                 assinaturaCliente: { nome: '', data: '' }
             };
+        }
+        // Garante compatibilidade com semanas antigas salvas antes desse campo existir
+        if (tsDados[chave].dias) {
+            tsDados[chave].dias.forEach(dia => { if (!dia.tecnicos) dia.tecnicos = []; });
         }
         return tsDados[chave];
     }
@@ -2239,6 +2243,64 @@ const todasEtapas = [
         return Math.max(0, minutos / 60);
     }
 
+    // Recalcula e atualiza SÓ as células de horas/extra de uma linha + o rodapé,
+    // sem recriar nenhum <input> — é isso que evita o cursor "sumir" ao digitar.
+    function recalcularLinha(i) {
+        const semana = dadosSemanaAtual();
+        const dia = semana.dias[i];
+        const intervaloFixo = 60;
+        const qtdTecnicos = (dia.tecnicos || []).length || 1;
+        const horasBase = calcularHoras(dia.inicio, dia.fim, intervaloFixo);
+        const horas = horasBase * qtdTecnicos;
+        const extra = horasBase > 8 ? (horasBase - 8) * qtdTecnicos : 0;
+
+        const elHoras = document.getElementById(`tsHoras_${i}`);
+        const elExtra = document.getElementById(`tsExtra_${i}`);
+        if (elHoras) {
+            elHoras.textContent = horas.toFixed(2) + 'h' + (qtdTecnicos > 1 ? ` (×${qtdTecnicos})` : '');
+        }
+        if (elExtra) {
+            elExtra.textContent = extra > 0 ? extra.toFixed(2) + 'h' : '-';
+            elExtra.style.color = extra > 0 ? '#dc3545' : '#aaa';
+            elExtra.style.fontWeight = extra > 0 ? 'bold' : 'normal';
+        }
+        atualizarRodapeTimesheet();
+    }
+
+    function atualizarRodapeTimesheet() {
+        const semana = dadosSemanaAtual();
+        let totalSemana = 0;
+        let totalExtra = 0;
+        for (let i = 0; i < 7; i++) {
+            const dia = semana.dias[i];
+            const qtdTecnicos = (dia.tecnicos || []).length || 1;
+            const horasBase = calcularHoras(dia.inicio, dia.fim, 60);
+            totalSemana += horasBase * qtdTecnicos;
+            totalExtra += horasBase > 8 ? (horasBase - 8) * qtdTecnicos : 0;
+        }
+        const elTotal = document.getElementById('tsTotalSemanaValor');
+        const elTotalExtra = document.getElementById('tsTotalExtraValor');
+        if (elTotal) elTotal.textContent = totalSemana.toFixed(2) + 'h';
+        if (elTotalExtra) {
+            elTotalExtra.textContent = totalExtra > 0 ? totalExtra.toFixed(2) + 'h' : '-';
+            elTotalExtra.style.color = totalExtra > 0 ? '#dc3545' : '#aaa';
+        }
+    }
+
+    // Move o foco pro próximo campo da tabela ao apertar Enter (ou ao terminar
+    // de preencher um input de hora), em vez de precisar clicar de novo.
+    function avancarComEnter(event, elementoAtual) {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        const campos = Array.from(document.querySelectorAll('#tsTabelaContainer .ts-campo'));
+        const idx = campos.indexOf(elementoAtual);
+        if (idx >= 0 && idx < campos.length - 1) {
+            campos[idx + 1].focus();
+        } else if (idx === campos.length - 1) {
+            elementoAtual.blur();
+        }
+    }
+
     // ==========================================
     // TIMESHEET - RENDERIZAR TABELA DA SEMANA
     // ==========================================
@@ -2251,31 +2313,44 @@ const todasEtapas = [
         document.getElementById('tsSemanaLabel').textContent =
             `${formatarDataCurta(tsSemanaBase)} - ${formatarDataCurta(fimSemana)}`;
 
-        let totalSemana = 0;
-        let totalExtra = 0;
+        const legenda = document.getElementById('tsEquipeLegenda');
+        if (legenda) {
+            legenda.textContent = tsTecnicosDisponiveis.length
+                ? `${t('tsEquipeDisponivel')}: ${tsTecnicosDisponiveis.join(', ')}`
+                : t('tsNenhumTecnicoInformado');
+        }
 
         let linhas = '';
         for (let i = 0; i < 7; i++) {
             const dataDia = new Date(tsSemanaBase);
             dataDia.setDate(dataDia.getDate() + i);
             const dia = semana.dias[i];
-            // Intervalo fixo em 1h (60 min)
             const intervaloFixo = 60;
-            const horas = calcularHoras(dia.inicio, dia.fim, intervaloFixo);
-            const extra = horas > 8 ? horas - 8 : 0;
-            totalSemana += horas;
-            totalExtra += extra;
+            const qtdTecnicos = (dia.tecnicos || []).length || 1;
+            const horasBase = calcularHoras(dia.inicio, dia.fim, intervaloFixo);
+            const horas = horasBase * qtdTecnicos;
+            const extra = horasBase > 8 ? (horasBase - 8) * qtdTecnicos : 0;
+
+            const checkboxesEquipe = tsTecnicosDisponiveis.length
+                ? tsTecnicosDisponiveis.map((nome, tecIdx) => `
+                    <label style="display:flex; align-items:center; gap:4px; font-size:12px; white-space:nowrap; margin-bottom:2px;">
+                        <input type="checkbox" ${dia.tecnicos.includes(tecIdx) ? 'checked' : ''} onchange="toggleTecnicoDia(${i}, ${tecIdx}, this.checked)">
+                        ${escapeHtml(nome)}
+                    </label>
+                `).join('')
+                : `<span style="font-size:11px; color:#aaa;">${t('tsNenhumTecnicoInformado')}</span>`;
 
             linhas += `
                 <tr>
                     <td style="font-weight:bold; white-space:nowrap; font-size:13px;">${diasLabel[i]}<br><span style="font-weight:normal; font-size:11px; color:#888;">${formatarDataCurta(dataDia)}</span></td>
-                    <td><input type="text" value="${escapeHtml(dia.atividade)}" placeholder="${t('tsAtividadePlaceholder')}" oninput="atualizarDiaTimesheet(${i}, 'atividade', this.value)" style="font-size:13px;"></td>
-                    <td><input type="time" value="${dia.inicio}" onchange="atualizarDiaTimesheet(${i}, 'inicio', this.value)" style="width:105px; font-size:13px;"></td>
-                    <td><input type="time" value="${dia.fim}" onchange="atualizarDiaTimesheet(${i}, 'fim', this.value)" style="width:105px; font-size:13px;"></td>
+                    <td><input class="ts-campo" type="text" value="${escapeHtml(dia.atividade)}" placeholder="${t('tsAtividadePlaceholder')}" oninput="atualizarDiaTimesheet(${i}, 'atividade', this.value)" onkeydown="avancarComEnter(event, this)" style="font-size:13px;"></td>
+                    <td><input class="ts-campo" type="time" value="${dia.inicio}" onchange="atualizarDiaTimesheet(${i}, 'inicio', this.value)" onkeydown="avancarComEnter(event, this)" style="width:105px; font-size:13px;"></td>
+                    <td><input class="ts-campo" type="time" value="${dia.fim}" onchange="atualizarDiaTimesheet(${i}, 'fim', this.value)" onkeydown="avancarComEnter(event, this)" style="width:105px; font-size:13px;"></td>
                     <td style="text-align:center; font-size:13px; color:#666; width:40px;">1h</td>
-                    <td><input type="number" min="0" value="${dia.standby || ''}" placeholder="0" style="width:65px; font-size:13px;" onchange="atualizarDiaTimesheet(${i}, 'standby', this.value)"></td>
-                    <td style="text-align:center; font-weight:bold; font-size:13px;">${horas.toFixed(2)}h</td>
-                    <td style="text-align:center; font-size:13px; ${extra > 0 ? 'color:#dc3545; font-weight:bold;' : 'color:#aaa;'}">${extra > 0 ? extra.toFixed(2) + 'h' : '-'}</td>
+                    <td><input class="ts-campo" type="number" min="0" value="${dia.standby || ''}" placeholder="0" style="width:65px; font-size:13px;" onchange="atualizarDiaTimesheet(${i}, 'standby', this.value)" onkeydown="avancarComEnter(event, this)"></td>
+                    <td style="min-width:110px;">${checkboxesEquipe}</td>
+                    <td id="tsHoras_${i}" style="text-align:center; font-weight:bold; font-size:13px; white-space:nowrap;">${horas.toFixed(2)}h${qtdTecnicos > 1 ? ` (×${qtdTecnicos})` : ''}</td>
+                    <td id="tsExtra_${i}" style="text-align:center; font-size:13px; ${extra > 0 ? 'color:#dc3545; font-weight:bold;' : 'color:#aaa;'}">${extra > 0 ? extra.toFixed(2) + 'h' : '-'}</td>
                 </tr>
             `;
         }
@@ -2290,6 +2365,7 @@ const todasEtapas = [
                         <th style="font-size:12px;">${t('tsFimColuna')}</th>
                         <th style="font-size:12px; width:40px;">${t('tsIntervaloColuna')}</th>
                         <th style="font-size:12px;">${t('tsStandbyColuna')}</th>
+                        <th style="font-size:12px;">${t('tsEquipeColuna')}</th>
                         <th style="font-size:12px;">${t('tsHorasColuna')}</th>
                         <th style="font-size:12px;">${t('tsExtraColuna')}</th>
                     </tr>
@@ -2299,15 +2375,16 @@ const todasEtapas = [
                 </tbody>
                 <tfoot>
                     <tr style="background:#f0f4f8; font-weight:bold;">
-                        <td colspan="6" style="text-align:right; font-size:13px;">${t('tsTotalSemana')}</td>
-                        <td style="text-align:center; font-size:13px;">${totalSemana.toFixed(2)}h</td>
-                        <td style="text-align:center; font-size:13px; color:${totalExtra > 0 ? '#dc3545' : '#aaa'};">${totalExtra > 0 ? totalExtra.toFixed(2) + 'h' : '-'}</td>
+                        <td colspan="7" style="text-align:right; font-size:13px;">${t('tsTotalSemana')}</td>
+                        <td id="tsTotalSemanaValor" style="text-align:center; font-size:13px;">0.00h</td>
+                        <td id="tsTotalExtraValor" style="text-align:center; font-size:13px; color:#aaa;">-</td>
                     </tr>
                 </tfoot>
             </table>
         `;
 
         document.getElementById('tsTabelaContainer').innerHTML = html;
+        atualizarRodapeTimesheet();
         document.getElementById('tsObservacoes').value = semana.observacoes || '';
         document.getElementById('tsAssinaturaTecnicoNome').value = semana.assinaturaTecnico.nome || '';
         document.getElementById('tsAssinaturaTecnicoData').value = semana.assinaturaTecnico.data || '';
@@ -2328,11 +2405,24 @@ const todasEtapas = [
     function atualizarDiaTimesheet(indiceDia, campo, valor) {
         const semana = dadosSemanaAtual();
         semana.dias[indiceDia][campo] = valor;
-        // O campo "atividade" não entra nos cálculos de horas/extra, então evitamos
-        // re-renderizar a tabela a cada letra digitada (isso fazia o input perder o foco).
+        // Recalcula só os números daquela linha (sem recriar os <input>), pra não
+        // perder o foco/cursor do campo que está sendo editado.
         if (campo !== 'atividade') {
-            renderizarTimesheet();
+            recalcularLinha(indiceDia);
         }
+        autosaveDebounced();
+    }
+
+    function toggleTecnicoDia(indiceDia, indiceTecnico, marcado) {
+        const semana = dadosSemanaAtual();
+        const dia = semana.dias[indiceDia];
+        if (!dia.tecnicos) dia.tecnicos = [];
+        if (marcado && !dia.tecnicos.includes(indiceTecnico)) {
+            dia.tecnicos.push(indiceTecnico);
+        } else if (!marcado) {
+            dia.tecnicos = dia.tecnicos.filter(idx => idx !== indiceTecnico);
+        }
+        recalcularLinha(indiceDia);
         autosaveDebounced();
     }
 
@@ -4026,7 +4116,7 @@ Fechar
             }
         }
         
-        const tecnicoSelecionado = tecnicos[tsTecnicoAtual]?.nome || 'Técnico não informado';
+        const nomesEquipe = tecnicos.map(tc => tc.nome).filter(Boolean).join(', ') || 'Equipe não informada';
         const dadosCliente = salvarTsMasterData();
         
         // Monta o conteúdo do relatório
@@ -4041,6 +4131,7 @@ Fechar
                         <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">Fim</th>
                         <th style="padding:8px; border:1px solid #dee2e6; text-align:center;">Intervalo</th>
                         <th style="padding:8px; border:1px solid #dee2e6; text-align:center;">Standby (min)</th>
+                        <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">Equipe</th>
                         <th style="padding:8px; border:1px solid #dee2e6; text-align:center;">Horas</th>
                         <th style="padding:8px; border:1px solid #dee2e6; text-align:center;">Extra</th>
                     </tr>
@@ -4054,10 +4145,13 @@ Fechar
         for (let i = 0; i < 7; i++) {
             const dia = semana.dias[i];
             const intervaloFixo = 60;
-            const horas = calcularHoras(dia.inicio, dia.fim, intervaloFixo);
-            const extra = horas > 8 ? horas - 8 : 0;
+            const qtdTecnicos = (dia.tecnicos || []).length || 1;
+            const horasBase = calcularHoras(dia.inicio, dia.fim, intervaloFixo);
+            const horas = horasBase * qtdTecnicos;
+            const extra = horasBase > 8 ? (horasBase - 8) * qtdTecnicos : 0;
             totalSemana += horas;
             totalExtra += extra;
+            const nomesDia = (dia.tecnicos || []).map(idx => tecnicos[idx]?.nome).filter(Boolean).join(', ') || '-';
             
             tabelaHtml += `
                 <tr>
@@ -4067,7 +4161,8 @@ Fechar
                     <td style="padding:6px; border:1px solid #dee2e6;">${dia.fim || '-'}</td>
                     <td style="padding:6px; border:1px solid #dee2e6; text-align:center;">1h</td>
                     <td style="padding:6px; border:1px solid #dee2e6; text-align:center;">${dia.standby || 0}</td>
-                    <td style="padding:6px; border:1px solid #dee2e6; text-align:center; font-weight:bold;">${horas.toFixed(2)}h</td>
+                    <td style="padding:6px; border:1px solid #dee2e6; font-size:11px;">${escapeHtml(nomesDia)}</td>
+                    <td style="padding:6px; border:1px solid #dee2e6; text-align:center; font-weight:bold;">${horas.toFixed(2)}h${qtdTecnicos > 1 ? ` (×${qtdTecnicos})` : ''}</td>
                     <td style="padding:6px; border:1px solid #dee2e6; text-align:center; ${extra > 0 ? 'color:#dc3545; font-weight:bold;' : 'color:#aaa;'}">${extra > 0 ? extra.toFixed(2) + 'h' : '-'}</td>
                 </tr>
             `;
@@ -4077,7 +4172,7 @@ Fechar
                 </tbody>
                 <tfoot>
                     <tr style="background:#f0f4f8; font-weight:bold;">
-                        <td colspan="6" style="padding:8px; border:1px solid #dee2e6; text-align:right;">Total da semana</td>
+                        <td colspan="7" style="padding:8px; border:1px solid #dee2e6; text-align:right;">Total da semana (homem-hora)</td>
                         <td style="padding:8px; border:1px solid #dee2e6; text-align:center;">${totalSemana.toFixed(2)}h</td>
                         <td style="padding:8px; border:1px solid #dee2e6; text-align:center; color:${totalExtra > 0 ? '#dc3545' : '#aaa'};">${totalExtra > 0 ? totalExtra.toFixed(2) + 'h' : '-'}</td>
                     </tr>
@@ -4096,7 +4191,7 @@ Fechar
                 </div>
                 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px; background:#f8f9fa; padding:15px; border-radius:8px;">
-                    <div><strong>Técnico:</strong> ${escapeHtml(tecnicoSelecionado)}</div>
+                    <div><strong>Equipe:</strong> ${escapeHtml(nomesEquipe)}</div>
                     <div><strong>Semana:</strong> ${formatarDataCurta(tsSemanaBase)} - ${formatarDataCurta(new Date(tsSemanaBase.getTime() + 6 * 24 * 60 * 60 * 1000))}</div>
                 </div>
                 
