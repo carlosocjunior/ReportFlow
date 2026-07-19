@@ -1247,6 +1247,13 @@
     function novoRelatorio() {
         if (!podeEditar()) { alert('Você não tem permissão para criar relatórios.'); return; }
         relatorioIdAtual = null;
+        window.dadosTecnicos = [];
+        for (let i = 1; i <= 3; i++) {
+            const nomeEl = document.getElementById(`tecnico${i}_nome`);
+            const funcaoEl = document.getElementById(`tecnico${i}_funcao`);
+            if (nomeEl) nomeEl.value = '';
+            if (funcaoEl) funcaoEl.value = '';
+        }
         document.getElementById('painelInicial').classList.add('oculto');
         document.getElementById('equipeArea').classList.remove('oculto');
         document.getElementById('menuPrincipal').classList.remove('oculto');
