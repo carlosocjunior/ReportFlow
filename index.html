@@ -1078,6 +1078,25 @@
 
 <script>
     // ==========================================
+    // MAIÚSCULO AUTOMÁTICO — todo campo de texto/textarea vira maiúsculo
+    // enquanto digita (aplica em qualquer campo, mesmo os criados
+    // dinamicamente depois, como as linhas do TimeSheet).
+    // ==========================================
+    document.addEventListener('input', function (evento) {
+        const el = evento.target;
+        const ehTexto = el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && (el.type === 'text' || el.type === 'search'));
+        if (!ehTexto) return;
+
+        const inicioSelecao = el.selectionStart;
+        const fimSelecao = el.selectionEnd;
+        el.value = el.value.toUpperCase();
+        // Restaura a posição do cursor (senão ele pula pro final a cada letra)
+        if (inicioSelecao !== null) {
+            el.setSelectionRange(inicioSelecao, fimSelecao);
+        }
+    });
+
+    // ==========================================
     // AUTENTICAÇÃO / PERMISSÃO (FLOWSUITE)
     // ==========================================
     const FLOWSUITE_API_URL = 'https://flowsuite-plus-api.flowsuite-plus.workers.dev';
