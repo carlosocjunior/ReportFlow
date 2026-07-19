@@ -942,6 +942,7 @@
         </div>
     </div>
     <div class="header-right">
+        <button class="btn-inicio-header oculto" id="btnEditarEquipeHeader" onclick="editarEquipeAtual()" data-i18n="editarEquipeBtn">✏️ Equipe</button>
         <button class="btn-inicio-header oculto" id="btnInicioHeader" onclick="confirmarVoltarInicio()" data-i18n="inicioBtn">Início</button>
     </div>
 </div>
@@ -985,6 +986,9 @@
     <div class="menu-principal oculto" id="menuPrincipal">
         <button class="btn-blade" onclick="abrirPagina('blade')" data-i18n="menuBlade">Blade Repair</button>
         <button class="btn-timesheet" onclick="abrirPagina('timesheet')" data-i18n="menuTimesheet">TimeSheet</button>
+    </div>
+    <div class="menu-principal oculto" id="botaoSalvarVoltarEquipe">
+        <button class="btn-timesheet" onclick="salvarEquipeEVoltar()" data-i18n="salvarEquipeVoltarBtn">Salvar e Voltar</button>
     </div>
 
     <!-- ==================== PÁGINA BLADE REPAIR ==================== -->
@@ -1257,6 +1261,38 @@
         document.getElementById('painelInicial').classList.add('oculto');
         document.getElementById('equipeArea').classList.remove('oculto');
         document.getElementById('menuPrincipal').classList.remove('oculto');
+    }
+
+    // Abre a tela de técnicos por cima do relatório que já está sendo editado
+    // (Blade Repair ou TimeSheet), sem resetar nada do que já foi preenchido.
+    let _paginaAntesDeEditarEquipe = null;
+    function editarEquipeAtual() {
+        _paginaAntesDeEditarEquipe = moduloAtual;
+        document.querySelectorAll('.pagina').forEach(p => p.classList.remove('ativa'));
+        document.getElementById('equipeArea').classList.remove('oculto');
+        document.getElementById('menuPrincipal').classList.add('oculto');
+        document.getElementById('botaoSalvarVoltarEquipe').classList.remove('oculto');
+    }
+
+    function salvarEquipeEVoltar() {
+        document.getElementById('equipeArea').classList.add('oculto');
+        document.getElementById('botaoSalvarVoltarEquipe').classList.add('oculto');
+
+        const pagina = _paginaAntesDeEditarEquipe || moduloAtual;
+        document.getElementById(`pagina${pagina.charAt(0).toUpperCase() + pagina.slice(1)}`).classList.add('ativa');
+
+        if (pagina === 'timesheet') {
+            // A lista de técnicos disponíveis pros checkboxes de cada dia
+            // pode ter mudado — repopula e re-renderiza a tabela.
+            tsTecnicosDisponiveis = [];
+            for (let i = 1; i <= 3; i++) {
+                const nome = document.getElementById(`tecnico${i}_nome`)?.value.trim() || '';
+                if (nome) tsTecnicosDisponiveis.push(nome);
+            }
+            renderizarTimesheet();
+        }
+
+        salvarProgressoAPI('em_processo');
     }
 
     async function continuarRelatorio(id) {
@@ -1540,6 +1576,8 @@
             alertCamposObrigatorios: 'Preencha todos os campos obrigatórios (*)',
             confirmVoltarInicio: 'Tem certeza que deseja sair?',
             inicioBtn: 'Início',
+            editarEquipeBtn: '✏️ Equipe',
+            salvarEquipeVoltarBtn: 'Salvar e Voltar',
             meusRelatorios: 'Meus Relatórios',
             novoRelatorioBtn: 'Novo Relatório',
             carregandoRelatorios: 'Carregando relatórios...',
@@ -1666,6 +1704,8 @@
             alertCamposObrigatorios: 'Please fill in all required fields (*)',
             confirmVoltarInicio: 'Are you sure you want to leave?',
             inicioBtn: 'Home',
+            editarEquipeBtn: '✏️ Team',
+            salvarEquipeVoltarBtn: 'Save and Go Back',
             meusRelatorios: 'My Reports',
             novoRelatorioBtn: 'New Report',
             carregandoRelatorios: 'Loading reports...',
@@ -1792,6 +1832,8 @@
             alertCamposObrigatorios: 'Complete todos los campos obligatorios (*)',
             confirmVoltarInicio: '¿Está seguro de que desea salir?',
             inicioBtn: 'Inicio',
+            editarEquipeBtn: '✏️ Equipo',
+            salvarEquipeVoltarBtn: 'Guardar y Volver',
             meusRelatorios: 'Mis Informes',
             novoRelatorioBtn: 'Nuevo Informe',
             carregandoRelatorios: 'Cargando informes...',
@@ -2097,27 +2139,32 @@ const todasEtapas = [
     function atualizarSubtitulo(modulo) {
         const subtituloEl = document.getElementById('subtituloModulo');
         const btnInicio = document.getElementById('btnInicioHeader');
+        const btnEditarEquipe = document.getElementById('btnEditarEquipeHeader');
         const equipeArea = document.getElementById('equipeArea');
         const menuPrincipal = document.getElementById('menuPrincipal');
         
         if (modulo === 'blade') {
             subtituloEl.textContent = t('subtituloBlade');
             btnInicio.classList.remove('oculto');
+            btnEditarEquipe.classList.remove('oculto');
             equipeArea.classList.add('oculto');
             menuPrincipal.classList.add('oculto');
         } else if (modulo === 'balanceamento') {
             subtituloEl.textContent = t('subtituloBalanceamento');
             btnInicio.classList.remove('oculto');
+            btnEditarEquipe.classList.remove('oculto');
             equipeArea.classList.add('oculto');
             menuPrincipal.classList.add('oculto');
         } else if (modulo === 'timesheet') {
             subtituloEl.textContent = t('subtituloTimesheet');
             btnInicio.classList.remove('oculto');
+            btnEditarEquipe.classList.remove('oculto');
             equipeArea.classList.add('oculto');
             menuPrincipal.classList.add('oculto');
         } else {
             subtituloEl.textContent = '';
             btnInicio.classList.add('oculto');
+            btnEditarEquipe.classList.add('oculto');
             equipeArea.classList.remove('oculto');
             menuPrincipal.classList.remove('oculto');
         }
