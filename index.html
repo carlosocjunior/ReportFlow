@@ -2675,8 +2675,10 @@ const todasEtapas = [
 
         for (let i = 0; i < 7; i++) {
             const dia = semana.dias[i];
-            const horas = calcularHoras(dia.inicio, dia.fim, 60);
-            const extra = horas > 8 ? horas - 8 : 0;
+            const qtdTecnicos = (dia.tecnicos || []).length || 1;
+            const horasBase = calcularHoras(dia.inicio, dia.fim, 60);
+            const horas = horasBase * qtdTecnicos;
+            const extra = horasBase > 8 ? (horasBase - 8) * qtdTecnicos : 0;
             const standby = (parseFloat(dia.standby) || 0) / 60;
             const temDados = !!(dia.inicio && dia.fim) || standby > 0;
 
