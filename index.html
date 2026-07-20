@@ -1347,6 +1347,7 @@
     function capturarEstadoBlade() {
         return {
             masterData: masterData,
+            dadosDanos: dadosDanos,
             tipoReparo: tipoReparo,
             defeitoSelecionado: defeitoSelecionado,
             danoDescricao: document.getElementById('danoDescricao')?.value || '',
@@ -1478,6 +1479,7 @@
             atualizarSubtitulo('blade');
 
             masterData = dados.masterData || {};
+            dadosDanos = dados.dadosDanos || [];
             tipoReparo = dados.tipoReparo || '';
             defeitoSelecionado = dados.defeitoSelecionado || '';
             relatorioAtual = dados.relatorioAtual || { defeito: '', etapas: [], imagens: {} };
@@ -1641,6 +1643,8 @@
             codigoPlaceholder: 'Código',
             editarBtn: 'Editar',
             gerarRelatorioBtn: 'Gerar Relatório',
+            adicionarOutroDanoBtn: '+ Adicionar outro dano',
+            danosJaRegistradosAviso: '{n} dano(s) já registrado(s) neste relatório.',
             alertRelatorioGerado: 'Relatório gerado com sucesso!',
             tsPageTitulo: 'TimeSheet Semanal',
             tsSemanaAnterior: 'Semana anterior',
@@ -1770,6 +1774,8 @@
             codigoPlaceholder: 'Code',
             editarBtn: 'Edit',
             gerarRelatorioBtn: 'Generate Report',
+            adicionarOutroDanoBtn: '+ Add another damage',
+            danosJaRegistradosAviso: '{n} damage(s) already registered in this report.',
             alertRelatorioGerado: 'Report generated successfully!',
             tsPageTitulo: 'Weekly TimeSheet',
             tsSemanaAnterior: 'Previous week',
@@ -1899,6 +1905,8 @@
             codigoPlaceholder: 'Código',
             editarBtn: 'Editar',
             gerarRelatorioBtn: 'Generar Informe',
+            adicionarOutroDanoBtn: '+ Agregar otro daño',
+            danosJaRegistradosAviso: '{n} daño(s) ya registrado(s) en este informe.',
             alertRelatorioGerado: '¡Informe generado con éxito!',
             tsPageTitulo: 'TimeSheet Semanal',
             tsSemanaAnterior: 'Semana anterior',
@@ -2079,6 +2087,7 @@ const todasEtapas = [
     let defeitoSelecionado = '';
     let etapaAtual = 0;
     let relatorioAtual = { defeito: '', etapas: [], imagens: {} };
+    let dadosDanos = []; // danos já registrados neste relatório (além do que está em relatorioAtual, que é o dano em andamento)
     let imagensTemp = {};
     let moduloAtual = '';
 
@@ -2837,6 +2846,7 @@ const todasEtapas = [
         defeitoSelecionado = '';
         etapaAtual = 0;
         relatorioAtual = { defeito: '', etapas: [], imagens: {} };
+        dadosDanos = [];
         imagensTemp = {};
         document.getElementById('wizardContainer').innerHTML = '';
         camposMasterData.forEach(campo => {
@@ -3663,85 +3673,44 @@ const todasEtapas = [
         // ==========================================
     // FUNÇÃO - RENDERIZAR RESUMO
     // ==========================================
-    function renderizarResumo(etapas) {
-        const container = document.getElementById('wizardContainer');
-        
-        let etapasPreenchidas = [];
-        
-        if (relatorioAtual.generico) {
-            etapasPreenchidas = relatorioAtual.etapas.filter(e => {
+    // Calcula quais etapas realmente têm conteúdo (nome/texto/foto), a partir
+    // de um objeto de relatório qualquer — reutilizável tanto pro dano atual
+    // quanto pra cada dano já registrado em dadosDanos.
+    function calcularEtapasPreenchidas(relatorioObj) {
+        if (relatorioObj.generico) {
+            return (relatorioObj.etapas || []).filter(e => {
                 const temNome = e.nome && e.nome.trim() !== '';
                 const temTexto = e.texto && e.texto.trim() !== '';
                 const temFotos = e.imagens && e.imagens.length > 0;
                 return temNome || temTexto || temFotos;
             });
-        } else {
-            for (let i = 0; i < relatorioAtual.etapas.length; i++) {
-                const e = relatorioAtual.etapas[i];
-                if (!e) continue;
-                const temTexto = e.texto && e.texto.trim() !== '';
-                const temFotos = (e.imagens && e.imagens.length > 0) ||
-                                 (e.imagensTemp && e.imagensTemp.length > 0) ||
-                                 (e.imagensUmidade && e.imagensUmidade.length > 0);
-                if (temTexto || temFotos) {
-                    etapasPreenchidas.push(e);
-                }
-            }
         }
-        
-        const totalImagens = etapasPreenchidas.reduce((acc, e) => {
-            return acc + (e.imagens ? e.imagens.length : 0) + 
-                   (e.imagensTemp ? e.imagensTemp.length : 0) + 
+        const preenchidas = [];
+        for (let i = 0; i < (relatorioObj.etapas || []).length; i++) {
+            const e = relatorioObj.etapas[i];
+            if (!e) continue;
+            const temTexto = e.texto && e.texto.trim() !== '';
+            const temFotos = (e.imagens && e.imagens.length > 0) ||
+                             (e.imagensTemp && e.imagensTemp.length > 0) ||
+                             (e.imagensUmidade && e.imagensUmidade.length > 0);
+            if (temTexto || temFotos) preenchidas.push(e);
+        }
+        return preenchidas;
+    }
+
+    function contarFotosEtapas(etapasPreenchidas) {
+        return etapasPreenchidas.reduce((acc, e) => {
+            return acc + (e.imagens ? e.imagens.length : 0) +
+                   (e.imagensTemp ? e.imagensTemp.length : 0) +
                    (e.imagensUmidade ? e.imagensUmidade.length : 0);
         }, 0);
-        
-        const tecnicos = window.dadosTecnicos || [];
-        const tecnicosHtml = tecnicos.length > 0 
-            ? tecnicos.map((tec, i) => `<span style="font-size:13px;">${i+1}. ${escapeHtml(tec.nome)} - ${escapeHtml(tec.funcao) || 'Role not provided'}</span><br>`).join('')
-            : '<span style="font-size:13px;">No technician provided</span>';
-        
-        let html = `
-            <div class="resumo-box">
-                <h3 style="color: #2C3E50; margin-bottom: 10px;">Report Summary</h3>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                    <div style="background: white; padding: 12px; border-radius: 6px; text-align: center;">
-                        <strong>${etapasPreenchidas.length}</strong>
-                        <p style="font-size: 12px; color: #666;">${relatorioAtual.generico ? 'Custom steps' : 'Total steps'}</p>
-                    </div>
-                    <div style="background: white; padding: 12px; border-radius: 6px; text-align: center;">
-                        <strong>${totalImagens}</strong>
-                        <p style="font-size: 12px; color: #666;">Attached photos</p>
-                    </div>
-                    <div style="background: white; padding: 12px; border-radius: 6px; text-align: center;">
-                        <strong>${relatorioAtual.generico ? 'Genérico' : (tipoReparo === 'interno' ? 'Interno' : 'Externo')}</strong>
-                        <p style="font-size: 12px; color: #666;">Repair type</p>
-                    </div>
-                </div>
-                
-                <hr style="margin: 15px 0;">
-                
-                <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
-                    <strong>Damage:</strong> ${escapeHtml(defeitoSelecionado)}
-                </div>
-                
-                <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
-                    <strong>Technicians:</strong><br>
-                    ${tecnicosHtml}
-                </div>
-                
-                <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
-                    <strong>Customer Data:</strong><br>
-                    ${Object.entries(masterData).map(([key, value]) => {
-                        const label = camposMasterData.find(c => c.id === key)?.label || key;
-                        return `<span style="font-size: 13px;">${escapeHtml(label)}: ${escapeHtml(value) || '-'}</span><br>`;
-                    }).join('')}
-                </div>
-                
-                <hr style="margin: 15px 0;">
-                <h4 style="color: #2C3E50; margin-bottom: 10px;">${relatorioAtual.generico ? 'Custom Steps' : 'Repair Steps'}</h4>
-        `;
-        
+    }
+
+    // Monta o HTML das etapas de UM dano (reutilizável pro dano atual e,
+    // na compilação final, pra cada dano já registrado em dadosDanos).
+    function montarHtmlEtapasDano(etapasPreenchidas, generico) {
+        let html = '';
+
         for (let i = 0; i < etapasPreenchidas.length; i++) {
             const etapa = etapasPreenchidas[i];
             if (!etapa) continue;
@@ -3785,7 +3754,7 @@ const todasEtapas = [
                 continue;
             }
             
-            if (relatorioAtual.generico) {
+            if (generico) {
                 const nomeExibido = etapa.nome || 'Etapa sem nome';
                 html += `
                     <div class="item">
@@ -3898,6 +3867,67 @@ const todasEtapas = [
                 </div>
             `;
         }
+
+        return html;
+    }
+
+    function renderizarResumo(etapas) {
+        const container = document.getElementById('wizardContainer');
+
+        const etapasPreenchidas = calcularEtapasPreenchidas(relatorioAtual);
+        const totalImagens = contarFotosEtapas(etapasPreenchidas);
+        
+        const tecnicos = window.dadosTecnicos || [];
+        const tecnicosHtml = tecnicos.length > 0 
+            ? tecnicos.map((tec, i) => `<span style="font-size:13px;">${i+1}. ${escapeHtml(tec.nome)} - ${escapeHtml(tec.funcao) || 'Role not provided'}</span><br>`).join('')
+            : '<span style="font-size:13px;">No technician provided</span>';
+
+        const danosJaAdicionados = dadosDanos.length;
+        
+        let html = `
+            <div class="resumo-box">
+                <h3 style="color: #2C3E50; margin-bottom: 10px;">Report Summary</h3>
+                ${danosJaAdicionados > 0 ? `<p style="background:#fff3cd; padding:8px 12px; border-radius:6px; font-size:13px; color:#856404;">${tf('danosJaRegistradosAviso', {n: danosJaAdicionados})}</p>` : ''}
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <div style="background: white; padding: 12px; border-radius: 6px; text-align: center;">
+                        <strong>${etapasPreenchidas.length}</strong>
+                        <p style="font-size: 12px; color: #666;">${relatorioAtual.generico ? 'Custom steps' : 'Total steps'}</p>
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 6px; text-align: center;">
+                        <strong>${totalImagens}</strong>
+                        <p style="font-size: 12px; color: #666;">Attached photos</p>
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 6px; text-align: center;">
+                        <strong>${relatorioAtual.generico ? 'Genérico' : (tipoReparo === 'interno' ? 'Interno' : 'Externo')}</strong>
+                        <p style="font-size: 12px; color: #666;">Repair type</p>
+                    </div>
+                </div>
+                
+                <hr style="margin: 15px 0;">
+                
+                <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
+                    <strong>Damage:</strong> ${escapeHtml(defeitoSelecionado)}
+                </div>
+                
+                <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
+                    <strong>Technicians:</strong><br>
+                    ${tecnicosHtml}
+                </div>
+                
+                <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
+                    <strong>Customer Data:</strong><br>
+                    ${Object.entries(masterData).map(([key, value]) => {
+                        const label = camposMasterData.find(c => c.id === key)?.label || key;
+                        return `<span style="font-size: 13px;">${escapeHtml(label)}: ${escapeHtml(value) || '-'}</span><br>`;
+                    }).join('')}
+                </div>
+                
+                <hr style="margin: 15px 0;">
+                <h4 style="color: #2C3E50; margin-bottom: 10px;">${relatorioAtual.generico ? 'Custom Steps' : 'Repair Steps'}</h4>
+        `;
+        
+        html += montarHtmlEtapasDano(etapasPreenchidas, relatorioAtual.generico);
         
         const materiaisPreenchidos = (relatorioAtual.materiais || []).filter(m => m.material || m.validade);
         if (materiaisPreenchidos.length > 0) {
@@ -3933,6 +3963,7 @@ const todasEtapas = [
         html += `
                 <div class="acoes-resumo">
                     <button class="btn-editar" onclick="editarWizard()">${t('editarBtn')}</button>
+                    <button class="btn-outro-dano" style="background:#6c757d;color:white;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;font-weight:bold;" onclick="adicionarOutroDano()">${t('adicionarOutroDanoBtn')}</button>
                     <button class="btn-submit" onclick="gerarRelatorioCompleto()">${t('gerarRelatorioBtn')}</button>
                 </div>
             </div>
@@ -3944,6 +3975,39 @@ const todasEtapas = [
     // ==========================================
     // FUNÇÃO - EDITAR WIZARD
     // ==========================================
+    // ==========================================
+    // ADICIONAR OUTRO DANO — guarda o dano atual (já com etapas,
+    // materiais e equipamentos preenchidos) e volta pra tela de
+    // descrição de dano, pra registrar mais um dentro do MESMO relatório.
+    // ==========================================
+    function adicionarOutroDano() {
+        dadosDanos.push({
+            tipoReparo: tipoReparo,
+            defeitoSelecionado: defeitoSelecionado,
+            danoDescricao: document.getElementById('danoDescricao')?.value || '',
+            danoZi: document.getElementById('danoZi')?.value || '',
+            danoZf: document.getElementById('danoZf')?.value || '',
+            relatorioAtual: relatorioAtual
+        });
+
+        tipoReparo = '';
+        defeitoSelecionado = '';
+        etapaAtual = 0;
+        relatorioAtual = { defeito: '', etapas: [], imagens: {} };
+        imagensTemp = {};
+        document.getElementById('wizardContainer').innerHTML = '';
+        document.getElementById('danoDescricao').value = '';
+        document.getElementById('danoZi').value = '';
+        document.getElementById('danoZf').value = '';
+        atualizarBotoesTipoReparo();
+
+        document.getElementById('nivel0').classList.add('hidden');
+        document.getElementById('nivel2').classList.remove('hidden');
+        document.getElementById('nivel3').classList.add('hidden');
+
+        salvarProgressoAPI('em_processo');
+    }
+
     function editarWizard() {
         if (relatorioAtual.generico) {
             renderizarWizardGenerico();
@@ -3983,23 +4047,170 @@ const todasEtapas = [
         `;
     }
 
-    function gerarRelatorioCompleto() {
-        const resumoBox = document.querySelector('.resumo-box');
-        if (!resumoBox) {
-            alert('Abra o resumo do relatório antes de gerar.');
-            return;
+    // Monta a tabela de índice, com faixa de fotos calculada em sequência
+    // (Dano 1: fotos 1 a 20, Dano 2: fotos 21 a 35, etc).
+    function montarIndiceDanos(listaDanos) {
+        let contadorFotos = 1;
+        let linhas = '';
+        listaDanos.forEach((dano, idx) => {
+            const relatorio = dano.relatorioAtual || {};
+            const etapasPreenchidas = calcularEtapasPreenchidas(relatorio);
+            const totalFotos = contarFotosEtapas(etapasPreenchidas);
+
+            const nomesEtapas = etapasPreenchidas
+                .map(e => escapeHtml((e.label || e.nome || '').toUpperCase()))
+                .filter(Boolean)
+                .join('<br>');
+
+            let faixaFotos = '-';
+            if (totalFotos > 0) {
+                const inicio = String(contadorFotos).padStart(2, '0');
+                const fim = String(contadorFotos + totalFotos - 1).padStart(2, '0');
+                faixaFotos = totalFotos === 1 ? inicio : `${inicio}-${fim}`;
+            }
+            contadorFotos += totalFotos;
+
+            linhas += `
+                <tr>
+                    <td style="padding:8px; border:1px solid #333; text-align:center; vertical-align:top; font-weight:bold;">${idx + 1}</td>
+                    <td style="padding:8px; border:1px solid #333; vertical-align:top;">${escapeHtml(dano.danoDescricao || dano.defeitoSelecionado) || '-'}</td>
+                    <td style="padding:8px; border:1px solid #333; text-align:center; vertical-align:top;">${escapeHtml(dano.danoZi) || '-'}</td>
+                    <td style="padding:8px; border:1px solid #333; text-align:center; vertical-align:top;">${escapeHtml(dano.danoZf) || '-'}</td>
+                    <td style="padding:8px; border:1px solid #333; text-align:center; vertical-align:top;">${nomesEtapas || '-'}</td>
+                    <td style="padding:8px; border:1px solid #333; text-align:center; vertical-align:top;">${faixaFotos}</td>
+                </tr>
+            `;
+        });
+
+        return `
+            <div style="margin-bottom:25px;">
+                <table style="width:100%; border-collapse:collapse; font-family:Arial, sans-serif; font-size:12px;">
+                    <thead>
+                        <tr style="background:#f1f3f5;">
+                            <th style="padding:8px; border:1px solid #333;">N°</th>
+                            <th style="padding:8px; border:1px solid #333;">DANO</th>
+                            <th style="padding:8px; border:1px solid #333;">Zi</th>
+                            <th style="padding:8px; border:1px solid #333;">Zf</th>
+                            <th style="padding:8px; border:1px solid #333;">ETAPAS</th>
+                            <th style="padding:8px; border:1px solid #333;">IMAGENS</th>
+                        </tr>
+                    </thead>
+                    <tbody>${linhas}</tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    // Separador enxuto entre um dano e o próximo — só uma linha com
+    // Dano/Zi/Zf, direto pra etapa 1 já em seguida (sem cabeçalho grande).
+    function montarHtmlDano(dano, indice) {
+        const relatorio = dano.relatorioAtual || { etapas: [] };
+        const etapasPreenchidas = calcularEtapasPreenchidas(relatorio);
+
+        return `
+            <div style="background:#f1f3f5; padding:8px 15px; border-radius:6px; margin:20px 0 10px; font-size:13px;">
+                <strong>Dano ${indice + 1}:</strong> ${escapeHtml(dano.danoDescricao || dano.defeitoSelecionado) || '-'}
+                &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Zi:</strong> ${escapeHtml(dano.danoZi) || '-'}
+                &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Zf:</strong> ${escapeHtml(dano.danoZf) || '-'}
+            </div>
+            ${montarHtmlEtapasDano(etapasPreenchidas, relatorio.generico)}
+        `;
+    }
+
+    // Junta os materiais/equipamentos preenchidos em TODOS os danos numa
+    // lista única, sem repetir por dano — mostrada uma vez só, no final.
+    function montarListasConsolidadas(listaDanos) {
+        const todosMateriais = [];
+        const todosEquipamentos = [];
+        listaDanos.forEach(dano => {
+            const relatorio = dano.relatorioAtual || {};
+            (relatorio.materiais || []).forEach(m => {
+                if (m.material || m.validade) todosMateriais.push(m);
+            });
+            (relatorio.equipamentos || []).forEach(e => {
+                if (e.equipamento || e.codigo || e.dataCalibracao) todosEquipamentos.push(e);
+            });
+        });
+
+        let html = '';
+
+        if (todosMateriais.length > 0) {
+            html += `
+                <hr style="margin: 25px 0;">
+                <h3 style="color: #2C3E50; margin-bottom: 10px;">Chemical Materials</h3>
+                <table class="tabela-wizard" style="background:white;">
+                    <thead><tr><th>Material</th><th>Expiry Date</th></tr></thead>
+                    <tbody>
+                        ${todosMateriais.map(m => `
+                            <tr><td>${escapeHtml(m.material) || '-'}</td><td>${escapeHtml(m.validade) || '-'}</td></tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
         }
 
-        // Reaproveita o mesmo conteúdo já exibido no resumo, removendo os botões de ação
-        const clone = resumoBox.cloneNode(true);
-        const acoes = clone.querySelector('.acoes-resumo');
-        if (acoes) acoes.remove();
-        const painelFinalizacaoClone = clone.querySelector('#painelFinalizacaoPdf');
-        if (painelFinalizacaoClone) painelFinalizacaoClone.remove();
+        if (todosEquipamentos.length > 0) {
+            html += `
+                <h3 style="color: #2C3E50; margin: 20px 0 10px;">Equipment</h3>
+                <table class="tabela-wizard" style="background:white;">
+                    <thead><tr><th>Equipment</th><th>Code</th><th>Calibration Date</th></tr></thead>
+                    <tbody>
+                        ${todosEquipamentos.map(e => `
+                            <tr><td>${escapeHtml(e.equipamento) || '-'}</td><td>${escapeHtml(e.codigo) || '-'}</td><td>${escapeHtml(e.dataCalibracao) || '-'}</td></tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        return html;
+    }
+
+    function gerarRelatorioCompleto() {
+        // Junta o dano que está sendo finalizado agora com os que já
+        // tinham sido adicionados antes (via "Adicionar outro dano").
+        const danoAtual = {
+            tipoReparo: tipoReparo,
+            defeitoSelecionado: defeitoSelecionado,
+            danoDescricao: document.getElementById('danoDescricao')?.value || '',
+            danoZi: document.getElementById('danoZi')?.value || '',
+            danoZf: document.getElementById('danoZf')?.value || '',
+            relatorioAtual: relatorioAtual
+        };
+        const todosOsDanos = [...dadosDanos, danoAtual];
+
+        const tecnicos = window.dadosTecnicos || [];
+        const tecnicosHtml = tecnicos.length > 0
+            ? tecnicos.map((tec, i) => `<span style="font-size:13px;">${i+1}. ${escapeHtml(tec.nome)} - ${escapeHtml(tec.funcao) || 'Role not provided'}</span><br>`).join('')
+            : '<span style="font-size:13px;">No technician provided</span>';
+
+        let corpo = `
+            <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px; border:1px solid #dee2e6;">
+                <strong>Technicians:</strong><br>
+                ${tecnicosHtml}
+            </div>
+            <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; border:1px solid #dee2e6;">
+                <strong>Customer Data:</strong><br>
+                ${Object.entries(masterData).map(([key, value]) => {
+                    const label = camposMasterData.find(c => c.id === key)?.label || key;
+                    return `<span style="font-size: 13px;">${escapeHtml(label)}: ${escapeHtml(value) || '-'}</span><br>`;
+                }).join('')}
+            </div>
+        `;
+
+        if (todosOsDanos.length > 1) {
+            corpo += montarIndiceDanos(todosOsDanos);
+        }
+
+        todosOsDanos.forEach((dano, idx) => {
+            corpo += montarHtmlDano(dano, idx);
+        });
+
+        corpo += montarListasConsolidadas(todosOsDanos);
 
         const htmlRelatorio = montarCabecalhoRelatorioBlade() + `
             <div style="font-family: Arial, sans-serif; max-width:1100px; margin:0 auto; padding:0 30px 30px;">
-                ${clone.innerHTML}
+                ${corpo}
             </div>
         `;
 
