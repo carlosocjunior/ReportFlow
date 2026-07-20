@@ -1150,7 +1150,7 @@
     // ==========================================
     async function carregarPainel() {
         const btnNovo = document.getElementById('btnNovoRelatorio');
-        if (btnNovo) btnNovo.style.display = podeEditar() ? '' : 'none';
+        if (btnNovo) btnNovo.style.display = (podeEditar() && empresaIdAtual !== 'todas') ? '' : 'none';
 
         const token = getTokenDaURL();
         const carregando = document.getElementById('painelCarregando');
@@ -1204,14 +1204,17 @@
             return;
         }
 
+        const modoTodasEmpresas = empresaIdAtual === 'todas';
+
         container.innerHTML = lista.map(r => `
             <div class="painel-card">
                 <div class="titulo">${iconeModulo(r.modulo)} ${escapeHtml(r.titulo) || '(sem título)'}</div>
+                ${modoTodasEmpresas ? `<div class="meta" style="font-weight:bold;">${escapeHtml(r.empresaCodigo || r.empresaNome || '')}</div>` : ''}
                 <div class="meta">${tf('atualizadoEm', {data: formatarDataHora(r.dataAtualizacao)})}</div>
                 <div class="acoes">
-                    ${emProcesso && podeEditar() ? `<button class="btn-continuar" onclick="continuarRelatorio('${r.id}')">${t('continuarRelatorioBtn')}</button>` : ''}
+                    ${!modoTodasEmpresas && emProcesso && podeEditar() ? `<button class="btn-continuar" onclick="continuarRelatorio('${r.id}')">${t('continuarRelatorioBtn')}</button>` : ''}
                     ${!emProcesso && r.pdfUrl ? `<a class="btn-ver-pdf" href="${r.pdfUrl}" target="_blank">${t('verPdfBtn')}</a>` : ''}
-                    ${podeExcluir() || podeEditar() ? `<button class="btn-excluir-relatorio" onclick="excluirRelatorioPainel('${r.id}')">${t('excluirBtn')}</button>` : ''}
+                    ${!modoTodasEmpresas && (podeExcluir() || podeEditar()) ? `<button class="btn-excluir-relatorio" onclick="excluirRelatorioPainel('${r.id}')">${t('excluirBtn')}</button>` : ''}
                 </div>
             </div>
         `).join('');
