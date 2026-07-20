@@ -3907,10 +3907,6 @@ const todasEtapas = [
                 <hr style="margin: 15px 0;">
                 
                 <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
-                    <strong>Damage:</strong> ${escapeHtml(defeitoSelecionado)}
-                </div>
-                
-                <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
                     <strong>Technicians:</strong><br>
                     ${tecnicosHtml}
                 </div>
@@ -3921,6 +3917,12 @@ const todasEtapas = [
                         const label = camposMasterData.find(c => c.id === key)?.label || key;
                         return `<span style="font-size: 13px;">${escapeHtml(label)}: ${escapeHtml(value) || '-'}</span><br>`;
                     }).join('')}
+                </div>
+
+                <div style="background:#f1f3f5; padding: 12px 15px; border-radius: 6px; margin-bottom: 10px; font-size:13px;">
+                    <strong>Dano:</strong> ${escapeHtml(document.getElementById('danoDescricao')?.value || defeitoSelecionado) || '-'}
+                    &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Zi:</strong> ${escapeHtml(document.getElementById('danoZi')?.value) || '-'}
+                    &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Zf:</strong> ${escapeHtml(document.getElementById('danoZf')?.value) || '-'}
                 </div>
                 
                 <hr style="margin: 15px 0;">
@@ -4122,13 +4124,24 @@ const todasEtapas = [
     function montarListasConsolidadas(listaDanos) {
         const todosMateriais = [];
         const todosEquipamentos = [];
+        const chavesMateriais = new Set();
+        const chavesEquipamentos = new Set();
+
         listaDanos.forEach(dano => {
             const relatorio = dano.relatorioAtual || {};
             (relatorio.materiais || []).forEach(m => {
-                if (m.material || m.validade) todosMateriais.push(m);
+                if (!m.material && !m.validade) return;
+                const chave = `${m.material || ''}|${m.validade || ''}`;
+                if (chavesMateriais.has(chave)) return;
+                chavesMateriais.add(chave);
+                todosMateriais.push(m);
             });
             (relatorio.equipamentos || []).forEach(e => {
-                if (e.equipamento || e.codigo || e.dataCalibracao) todosEquipamentos.push(e);
+                if (!e.equipamento && !e.codigo && !e.dataCalibracao) return;
+                const chave = `${e.equipamento || ''}|${e.codigo || ''}|${e.dataCalibracao || ''}`;
+                if (chavesEquipamentos.has(chave)) return;
+                chavesEquipamentos.add(chave);
+                todosEquipamentos.push(e);
             });
         });
 
@@ -4185,16 +4198,9 @@ const todasEtapas = [
             : '<span style="font-size:13px;">No technician provided</span>';
 
         let corpo = `
-            <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px; border:1px solid #dee2e6;">
+            <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; border:1px solid #dee2e6;">
                 <strong>Technicians:</strong><br>
                 ${tecnicosHtml}
-            </div>
-            <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; border:1px solid #dee2e6;">
-                <strong>Customer Data:</strong><br>
-                ${Object.entries(masterData).map(([key, value]) => {
-                    const label = camposMasterData.find(c => c.id === key)?.label || key;
-                    return `<span style="font-size: 13px;">${escapeHtml(label)}: ${escapeHtml(value) || '-'}</span><br>`;
-                }).join('')}
             </div>
         `;
 
