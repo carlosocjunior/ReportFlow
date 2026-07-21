@@ -1685,6 +1685,7 @@
             editarBtn: 'Editar',
             gerarRelatorioBtn: 'Gerar Relatório',
             adicionarOutroDanoBtn: '+ Adicionar outro dano',
+            editarDadosDanoBtn: 'Editar Dados do Dano',
             danosJaRegistradosAviso: '{n} dano(s) já registrado(s) neste relatório.',
             alertRelatorioGerado: 'Relatório gerado com sucesso!',
             tsPageTitulo: 'TimeSheet Semanal',
@@ -1816,6 +1817,7 @@
             editarBtn: 'Edit',
             gerarRelatorioBtn: 'Generate Report',
             adicionarOutroDanoBtn: '+ Add another damage',
+            editarDadosDanoBtn: 'Edit Damage Data',
             danosJaRegistradosAviso: '{n} damage(s) already registered in this report.',
             alertRelatorioGerado: 'Report generated successfully!',
             tsPageTitulo: 'Weekly TimeSheet',
@@ -1947,6 +1949,7 @@
             editarBtn: 'Editar',
             gerarRelatorioBtn: 'Generar Informe',
             adicionarOutroDanoBtn: '+ Agregar otro daño',
+            editarDadosDanoBtn: 'Editar Datos del Daño',
             danosJaRegistradosAviso: '{n} daño(s) ya registrado(s) en este informe.',
             alertRelatorioGerado: '¡Informe generado con éxito!',
             tsPageTitulo: 'TimeSheet Semanal',
@@ -2919,6 +2922,16 @@ const todasEtapas = [
     // ==========================================
     // FUNÇÃO - CONFIRMAR DANO
     // ==========================================
+    let modoEditandoDano = false;
+
+    // Volta pra tela de descrição do dano (Zi/Zf/texto) SEM perder as
+    // etapas já preenchidas — diferente de começar um dano novo.
+    function editarDadosDano() {
+        modoEditandoDano = true;
+        document.getElementById('nivel3').classList.add('hidden');
+        document.getElementById('nivel2').classList.remove('hidden');
+    }
+
     function confirmarDano() {
         const descricao = document.getElementById('danoDescricao').value.trim();
         const zi = document.getElementById('danoZi').value.trim();
@@ -2942,6 +2955,15 @@ const todasEtapas = [
         defeitoSelecionado = defeito;
         document.getElementById('nivel2').classList.add('hidden');
         document.getElementById('nivel3').classList.remove('hidden');
+
+        // Corrigindo os dados de um dano que já tinha etapas preenchidas —
+        // só atualiza o texto/Zi/Zf, sem resetar o wizard.
+        if (modoEditandoDano) {
+            modoEditandoDano = false;
+            renderizarResumo();
+            salvarProgressoAPI('em_processo');
+            return;
+        }
         
         // SE FOR GENÉRICO, CHAMA A FUNÇÃO ESPECÍFICA
         if (tipoReparo === 'generico') {
@@ -4035,6 +4057,7 @@ const todasEtapas = [
         
         html += `
                 <div class="acoes-resumo">
+                    <button class="btn-editar-dano" style="background:#495057;color:white;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;font-weight:bold;" onclick="editarDadosDano()">${t('editarDadosDanoBtn')}</button>
                     <button class="btn-editar" onclick="editarWizard()">${t('editarBtn')}</button>
                     <button class="btn-outro-dano" style="background:#6c757d;color:white;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;font-weight:bold;" onclick="adicionarOutroDano()">${t('adicionarOutroDanoBtn')}</button>
                     <button class="btn-submit" onclick="gerarRelatorioCompleto()">${t('gerarRelatorioBtn')}</button>
