@@ -1102,6 +1102,47 @@
     });
 
     // ==========================================
+    // COLAR IMAGEM (Ctrl+V) — clique numa caixinha de foto de uma etapa
+    // "marca" ela como destino; colar em seguida (em qualquer lugar da
+    // página) joga a imagem colada ali, sem precisar escolher arquivo.
+    // ==========================================
+    window._areaUploadAtiva = null;
+
+    function definirAreaAtiva(tipo, index, extra) {
+        window._areaUploadAtiva = { tipo, index, extra };
+    }
+
+    document.addEventListener('paste', function (evento) {
+        const area = window._areaUploadAtiva;
+        if (!area) return;
+
+        const items = evento.clipboardData && evento.clipboardData.items;
+        if (!items) return;
+
+        let imagem = null;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type && items[i].type.startsWith('image/')) {
+                imagem = items[i].getAsFile();
+                break;
+            }
+        }
+        if (!imagem) return;
+
+        evento.preventDefault();
+        const eventoFalso = { target: { files: [imagem], value: '' } };
+
+        if (area.tipo === 'normal') {
+            carregarImagem(eventoFalso, area.index, area.extra);
+        } else if (area.tipo === 'generica') {
+            carregarImagemGenerica(eventoFalso, area.index);
+        } else if (area.tipo === 'temp') {
+            carregarImagemTemp(eventoFalso, area.index, 'temp');
+        } else if (area.tipo === 'umidade') {
+            carregarImagemTemp(eventoFalso, area.index, 'umidade');
+        }
+    });
+
+    // ==========================================
     // AUTENTICAÇÃO / PERMISSÃO (FLOWSUITE)
     // ==========================================
     const FLOWSUITE_API_URL = 'https://flowsuite-plus-api.flowsuite-plus.workers.dev';
@@ -3008,7 +3049,7 @@ const todasEtapas = [
                         <input type="text" id="etapaNome_${index}" placeholder="${t('etapaNomePlaceholder')}" value="${escapeHtml(etapa.nome) || ''}" onchange="salvarNomeEtapaGenerica(${index}, this.value)">
                     </div>
                     <textarea id="etapaTexto_${index}" placeholder="${t('etapaObservacoesPlaceholder')}" onchange="salvarTextoEtapaGenerica(${index}, this.value)">${escapeHtml(etapa.texto) || ''}</textarea>
-                    <input type="file" accept="image/*" onchange="carregarImagemGenerica(event, ${index})" multiple>
+                    <input type="file" accept="image/*" onfocus="definirAreaAtiva('generica', ${index})" onchange="carregarImagemGenerica(event, ${index})" multiple>
                     <div id="previewGenerica_${index}" class="preview-imagens"></div>
                     <div class="foto-status">${t('fotosStatusLabel')} ${fotosAtuais} <span style="color:#999; font-size:12px;">${t('fotosMinSePreenchidaLabel')}</span></div>
                 </div>
@@ -3226,7 +3267,7 @@ const todasEtapas = [
                         <label>${t('valorLabel')}</label>
                         <input type="text" id="temp_${index}" placeholder="Ex: 25°C" value="${escapeHtml(etapaData.temperatura) || ''}">
                         <label style="margin-top: 8px;">${t('fotoTemperaturaLabel')}</label>
-                        <input type="file" accept="image/*" onchange="carregarImagemTemp(event, ${index}, 'temp')" multiple>
+                        <input type="file" accept="image/*" onfocus="definirAreaAtiva('temp', ${index})" onchange="carregarImagemTemp(event, ${index}, 'temp')" multiple>
                         <div id="previewTemp_${index}" class="preview-imagens"></div>
                         <div class="foto-status">${t('fotosStatusLabel')} ${tempFotos >= 1 ? '' : ''} ${tempFotos}/1</div>
                     </div>
@@ -3235,7 +3276,7 @@ const todasEtapas = [
                         <label>${t('valorLabel')}</label>
                         <input type="text" id="umidade_${index}" placeholder="Ex: 60%" value="${escapeHtml(etapaData.umidade) || ''}">
                         <label style="margin-top: 8px;">${t('fotoUmidadeLabel')}</label>
-                        <input type="file" accept="image/*" onchange="carregarImagemTemp(event, ${index}, 'umidade')" multiple>
+                        <input type="file" accept="image/*" onfocus="definirAreaAtiva('umidade', ${index})" onchange="carregarImagemTemp(event, ${index}, 'umidade')" multiple>
                         <div id="previewUmidade_${index}" class="preview-imagens"></div>
                         <div class="foto-status">${t('fotosStatusLabel')} ${umidadeFotos >= 1 ? '' : ''} ${umidadeFotos}/1</div>
                     </div>
@@ -3273,7 +3314,7 @@ const todasEtapas = [
         if (!etapa.isTempUmidade) {
             html += `
                 <label>${tf('adicionarFotosLabel', {n: fotosMin})}</label>
-                <input type="file" id="fotoEtapa${index}" accept="image/*" onchange="carregarImagem(event, ${index}, ${fotosMin})" multiple>
+                <input type="file" id="fotoEtapa${index}" accept="image/*" onfocus="definirAreaAtiva('normal', ${index}, ${fotosMin})" onchange="carregarImagem(event, ${index}, ${fotosMin})" multiple>
                 <div id="preview${index}" class="preview-imagens"></div>
                 <div class="foto-status">${t('fotosAnexadasLabel')} ${statusFotos}</div>
             `;
