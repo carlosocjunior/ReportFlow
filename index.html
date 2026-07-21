@@ -3274,7 +3274,10 @@ const todasEtapas = [
                     <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; border: 1px solid #b8d4e3;">
                         <h4 style="color: #2980b9; margin-bottom: 8px;">${t('umidadeTitulo')}</h4>
                         <label>${t('valorLabel')}</label>
-                        <input type="text" id="umidade_${index}" placeholder="Ex: 60%" value="${escapeHtml(etapaData.umidade) || ''}">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <input type="text" id="umidade_${index}" placeholder="Ex: 60" style="flex:1;" value="${escapeHtml((etapaData.umidade || '').replace('%', ''))}">
+                            <span style="font-weight:bold; color:#555;">%</span>
+                        </div>
                         <label style="margin-top: 8px;">${t('fotoUmidadeLabel')}</label>
                         <input type="file" accept="image/*" onfocus="definirAreaAtiva('umidade', ${index})" onchange="carregarImagemTemp(event, ${index}, 'umidade')" multiple>
                         <div id="previewUmidade_${index}" class="preview-imagens"></div>
@@ -3521,7 +3524,8 @@ const todasEtapas = [
         // VALIDAÇÃO TEMPERATURA/UMIDADE
         if (etapa.isTempUmidade) {
             const temp = document.getElementById(`temp_${index}`)?.value.trim() || '';
-            const umidade = document.getElementById(`umidade_${index}`)?.value.trim() || '';
+            let umidade = document.getElementById(`umidade_${index}`)?.value.trim() || '';
+            if (umidade && !umidade.includes('%')) umidade += '%';
             const tempFotos = (imagensTemp[`${index}_temp`] || []).length;
             const umidadeFotos = (imagensTemp[`${index}_umidade`] || []).length;
             
@@ -3817,6 +3821,28 @@ const todasEtapas = [
             
             const isLam = etapa.isLaminacao === true || (etapa.label && etapa.label.includes('Lamination layer'));
             if (isLam) {
+                const temDuasOuMaisFotos = etapa.imagens && etapa.imagens.length >= 2;
+
+                if (temDuasOuMaisFotos) {
+                    // 2+ fotos: ocupa a linha inteira sozinha, fotos lado a lado em tamanho normal.
+                    // A próxima camada NÃO é consumida aqui — segue sua vida normalmente na próxima volta do loop.
+                    html += `
+                        <div class="item" style="margin-bottom: 15px;">
+                            <strong>${etapa.label}</strong>
+                            ${etapa.tipoCamada ? `<div style="font-size:13px; color:#555; margin: 4px 0;">Type: ${escapeHtml(etapa.tipoCamada)}</div>` : ''}
+                            ${etapa.texto ? `<p style="margin-top: 5px;">${escapeHtml(etapa.texto)}</p>` : ''}
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top:5px;">
+                                ${etapa.imagens.map(img => `
+                                    <div style="background: white; border-radius: 6px; padding: 4px; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; overflow: hidden; aspect-ratio: 4/3;">
+                                        <img src="${img}" alt="Foto" style="width:100%; height:100%; object-fit:contain; border-radius:4px;">
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                    continue;
+                }
+
                 let proximaEtapa = null;
                 let proximoIndex = -1;
                 for (let j = i + 1; j < etapasPreenchidas.length; j++) {
