@@ -3265,7 +3265,10 @@ const todasEtapas = [
                     <div style="background: #fff5f5; padding: 15px; border-radius: 8px; border: 1px solid #fcc;">
                         <h4 style="color: #c0392b; margin-bottom: 8px;">${t('temperaturaTitulo')}</h4>
                         <label>${t('valorLabel')}</label>
-                        <input type="text" id="temp_${index}" placeholder="Ex: 25°C" value="${escapeHtml(etapaData.temperatura) || ''}">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <input type="text" id="temp_${index}" placeholder="Ex: 25" style="flex:1;" value="${escapeHtml((etapaData.temperatura || '').replace('°C', ''))}">
+                            <span style="font-weight:bold; color:#555;">°C</span>
+                        </div>
                         <label style="margin-top: 8px;">${t('fotoTemperaturaLabel')}</label>
                         <input type="file" accept="image/*" onfocus="definirAreaAtiva('temp', ${index})" onchange="carregarImagemTemp(event, ${index}, 'temp')" multiple>
                         <div id="previewTemp_${index}" class="preview-imagens"></div>
@@ -3523,7 +3526,8 @@ const todasEtapas = [
 
         // VALIDAÇÃO TEMPERATURA/UMIDADE
         if (etapa.isTempUmidade) {
-            const temp = document.getElementById(`temp_${index}`)?.value.trim() || '';
+            let temp = document.getElementById(`temp_${index}`)?.value.trim() || '';
+            if (temp && !temp.includes('°C')) temp += '°C';
             let umidade = document.getElementById(`umidade_${index}`)?.value.trim() || '';
             if (umidade && !umidade.includes('%')) umidade += '%';
             const tempFotos = (imagensTemp[`${index}_temp`] || []).length;
@@ -4271,9 +4275,7 @@ const todasEtapas = [
             </div>
         `;
 
-        if (todosOsDanos.length > 1) {
-            corpo += montarIndiceDanos(todosOsDanos);
-        }
+        corpo += montarIndiceDanos(todosOsDanos);
 
         todosOsDanos.forEach((dano, idx) => {
             corpo += montarHtmlDano(dano, idx);
