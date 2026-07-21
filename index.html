@@ -4426,14 +4426,28 @@ Fechar
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const proporcao = img.height / img.width;
-                    const largura = Math.min(img.width, maxLargura);
-                    const altura = largura * proporcao;
-                    
+                    const ctx = canvas.getContext('2d');
+
+                    // Foto "em pé" (vertical) — gira 90° automaticamente pra ficar deitada
+                    const estaVertical = img.height > img.width;
+
+                    // Padrão fixo 4:3 — a foto é esticada/encolhida pra caber
+                    // certinho nesse quadro, nunca cortada.
+                    const largura = maxLargura;
+                    const altura = Math.round(largura * 3 / 4);
+
                     canvas.width = largura;
                     canvas.height = altura;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, largura, altura);
+
+                    if (estaVertical) {
+                        ctx.save();
+                        ctx.translate(largura / 2, altura / 2);
+                        ctx.rotate(Math.PI / 2);
+                        ctx.drawImage(img, -altura / 2, -largura / 2, altura, largura);
+                        ctx.restore();
+                    } else {
+                        ctx.drawImage(img, 0, 0, largura, altura);
+                    }
                     
                     resolve(canvas.toDataURL('image/jpeg', qualidade));
                 };
