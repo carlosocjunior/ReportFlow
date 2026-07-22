@@ -3507,14 +3507,17 @@ const todasEtapas = [
         const etapas = filtrarEtapas(defeitoSelecionado);
         const etapa = etapas[index];
         const fotosAtuais = (imagensTemp[index] || []).length;
+        // dev pode navegar livre, sem as travas de obrigatoriedade — útil pra
+        // testar o fluxo rapidamente. As travas continuam valendo pros demais níveis.
+        const bypassValidacao = permissaoUsuario === 'dev';
         
         // VALIDAÇÃO DE FOTOS
         if (!etapa.isTempUmidade) {
-            if (etapa.obrigatorio && fotosAtuais < fotosMin) {
+            if (etapa.obrigatorio && fotosAtuais < fotosMin && !bypassValidacao) {
                 alert(tf('alertFotoMinima', {label: etapaLabel(etapa), n: fotosMin, atual: fotosAtuais}));
                 return;
             }
-            if (!etapa.obrigatorio && fotosAtuais < fotosMin && fotosAtuais > 0) {
+            if (!etapa.obrigatorio && fotosAtuais < fotosMin && fotosAtuais > 0 && !bypassValidacao) {
                 if (!confirm(tf('confirmFotoOpcional', {n: fotosMin, atual: fotosAtuais}))) {
                     return;
                 }
@@ -3556,7 +3559,7 @@ const todasEtapas = [
             const tempFotos = (imagensTemp[`${index}_temp`] || []).length;
             const umidadeFotos = (imagensTemp[`${index}_umidade`] || []).length;
             
-            if (etapa.obrigatorio || temp || umidade || tempFotos > 0 || umidadeFotos > 0) {
+            if ((etapa.obrigatorio || temp || umidade || tempFotos > 0 || umidadeFotos > 0) && !bypassValidacao) {
                 if (!temp || !umidade) {
                     alert(tf('alertTempUmidadeObrigatorio', {label: etapaLabel(etapa)}));
                     return;
@@ -3581,11 +3584,11 @@ const todasEtapas = [
             const tipoCamada = document.getElementById(`tipoCamada_${index}`)?.value || '';
             const isObrigatorioCamada = etapa.camadaNum <= 2;
             
-            if (isObrigatorioCamada && !tipoCamada) {
+            if (isObrigatorioCamada && !tipoCamada && !bypassValidacao) {
                 alert(tf('alertCamadaObrigatoria', {n: etapa.camadaNum}));
                 return;
             }
-            if (!isObrigatorioCamada && texto && !tipoCamada) {
+            if (!isObrigatorioCamada && texto && !tipoCamada && !bypassValidacao) {
                 alert(tf('alertCamadaSemTipo', {n: etapa.camadaNum}));
                 return;
             }
