@@ -2165,17 +2165,18 @@ const todasEtapas = [
     // FUNÇÃO 2 - PROSSEGUIR MASTER DATA
     // ==========================================
     function prosseguirMasterData() {
+        const bypassValidacao = permissaoUsuario === 'dev';
         let valid = true;
         const dados = {};
         camposMasterData.forEach(campo => {
             const el = document.getElementById(`md_${campo.id}`);
             const valor = el.value.trim();
-            if (campo.obrigatorio && !valor) {
+            dados[campo.id] = valor;
+            if (campo.obrigatorio && !valor && !bypassValidacao) {
                 valid = false;
                 el.style.borderColor = '#dc3545';
             } else {
                 el.style.borderColor = '#ddd';
-                dados[campo.id] = valor;
             }
         });
 
@@ -2934,11 +2935,12 @@ const todasEtapas = [
     }
 
     function confirmarDano() {
+        const bypassValidacao = permissaoUsuario === 'dev';
         const descricao = document.getElementById('danoDescricao').value.trim();
         const zi = document.getElementById('danoZi').value.trim();
         const zf = document.getElementById('danoZf').value.trim();
 
-        if (!descricao) {
+        if (!descricao && !bypassValidacao) {
             alert(t('alertDescrevaDano'));
             return;
         }
