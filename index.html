@@ -1006,9 +1006,57 @@
                 <!-- NÍVEL 2 (inclui Dano + Tipo de Reparo) -->
         <div id="nivel2" class="hidden">
             <h3 style="color: #2C3E50;" data-i18n="danoTitulo">Dano</h3>
-            <p style="color:#555; font-size:14px; margin: 8px 0 12px;" data-i18n="danoDescricaoTexto">Descreva exatamente o tipo de dano e sua localização. Incluir detalhes entre WEB, LE/TE, DW/UW, TIP e Root.</p>
-            <textarea id="danoDescricao" placeholder="Describe exactly the type of damage and its location. Include details between WEB, LE/TE, DW/UW, TIP and Root." style="width:100%; min-height:110px; padding:12px; border:1px solid #ddd; border-radius:6px; font-size:14px; font-family: Arial, sans-serif; resize:vertical;"></textarea>
-            <div style="display:flex; gap:15px; margin-top:15px;">
+
+            <div style="margin-bottom:15px; max-width:400px;">
+                <label style="font-weight:bold; color:#555; font-size:13px; display:block; margin-bottom:5px;" data-i18n="danoTipoLabel">Dano</label>
+                <select id="danoTipo" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; font-size:14px;">
+                    <option value="" data-i18n="selecionarPlaceholder">Selecione...</option>
+                    <option value="Bonding, Cracks in the adhesive line">Bonding, Cracks in the adhesive line</option>
+                    <option value="Adhesive not cured">Adhesive not cured</option>
+                    <option value="Bonding, Lack of adhesive, Edges">Bonding, Lack of adhesive, Edges</option>
+                    <option value="Too thick adhesive, Edges">Too thick adhesive, Edges</option>
+                    <option value="Bonding, Lack of adhesive, Webs">Bonding, Lack of adhesive, Webs</option>
+                    <option value="Too thick adhesive, Webs">Too thick adhesive, Webs</option>
+                    <option value="Carbon fiber shaft">Carbon fiber shaft</option>
+                    <option value="Component, Erosion">Component, Erosion</option>
+                    <option value="Component, Damage">Component, Damage</option>
+                    <option value="Spoiler">Spoiler</option>
+                    <option value="Component, Appearance out of specification">Component, Appearance out of specification</option>
+                    <option value="Other component failure">Other component failure</option>
+                    <option value="Component, Position out of tolerance">Component, Position out of tolerance</option>
+                    <option value="Receptor / Lightning System">Receptor / Lightning System</option>
+                    <option value="Laminate, Cracks in laminate">Laminate, Cracks in laminate</option>
+                    <option value="Laminate, Laminate Appearance">Laminate, Laminate Appearance</option>
+                    <option value="LE / TE Crack (cut flange)">LE / TE Crack (cut flange)</option>
+                    <option value="Leading / Trailing Edge Flange Offset">Leading / Trailing Edge Flange Offset</option>
+                    <option value="LE / TE Crack (resin)">LE / TE Crack (resin)</option>
+                    <option value="Missing Grinding">Missing Grinding</option>
+                    <option value="Laminate, Delamination">Laminate, Delamination</option>
+                    <option value="Crack in sandwich core material">Crack in sandwich core material</option>
+                    <option value="Laminate, Air voids">Laminate, Air voids</option>
+                    <option value="Balsa misplacement / gap">Balsa misplacement / gap</option>
+                    <option value="Laminate, Dry glass">Laminate, Dry glass</option>
+                    <option value="Foreign object in laminate">Foreign object in laminate</option>
+                    <option value="Laminate, Wrinkle">Laminate, Wrinkle</option>
+                    <option value="Hole in laminate">Hole in laminate</option>
+                    <option value="Impact in Laminate">Impact in Laminate</option>
+                    <option value="Laminate, Flange delamination">Laminate, Flange delamination</option>
+                    <option value="Gelcoat, Chip">Gelcoat, Chip</option>
+                    <option value="Gelcoat, Cracks">Gelcoat, Cracks</option>
+                    <option value="Gelcoat, Damage">Gelcoat, Damage</option>
+                    <option value="Gelcoat, Flaking">Gelcoat, Flaking</option>
+                    <option value="Gelcoat, Pinholes">Gelcoat, Pinholes</option>
+                    <option value="Gelcoat, Wear and Tear">Gelcoat, Wear and Tear</option>
+                    <option value="Gelcoat, Contamination">Gelcoat, Contamination</option>
+                    <option value="Other gelcoat failure / Color defect">Other gelcoat failure / Color defect</option>
+                    <option value="Thin Gelcoat">Thin Gelcoat</option>
+                    <option value="Gelcoat runs">Gelcoat runs</option>
+                </select>
+            </div>
+
+            <p style="color:#555; font-size:14px; margin: 8px 0 8px;" data-i18n="danoObsTexto">Observações adicionais (opcional)</p>
+            <textarea id="danoDescricao" style="width:100%; min-height:50px; padding:10px; border:1px solid #ddd; border-radius:6px; font-size:14px; font-family: Arial, sans-serif; resize:vertical;"></textarea>
+            <div style="display:flex; gap:15px; margin-top:15px; flex-wrap:wrap; align-items:flex-end;">
                 <div>
                     <label style="font-weight:bold; color:#555; font-size:13px; display:block; margin-bottom:5px;">Zi</label>
                     <input type="text" id="danoZi" maxlength="6" style="width:100px; padding:8px 12px; border:1px solid #ddd; border-radius:5px; font-size:14px;">
@@ -1016,6 +1064,40 @@
                 <div>
                     <label style="font-weight:bold; color:#555; font-size:13px; display:block; margin-bottom:5px;">Zf</label>
                     <input type="text" id="danoZf" maxlength="6" style="width:100px; padding:8px 12px; border:1px solid #ddd; border-radius:5px; font-size:14px;">
+                </div>
+                <div>
+                    <label style="font-weight:bold; color:#555; font-size:13px; display:block; margin-bottom:5px;" data-i18n="danoCascaLabel">Casca</label>
+                    <select id="danoCasca" style="padding:8px 12px; border:1px solid #ddd; border-radius:5px; font-size:14px;">
+                        <option value="" data-i18n="selecionarPlaceholder">Selecione...</option>
+                        <option value="UW">UW</option>
+                        <option value="DW">DW</option>
+                        <option value="PS">PS</option>
+                        <option value="SS">SS</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-weight:bold; color:#555; font-size:13px; display:block; margin-bottom:5px;" data-i18n="danoComponenteLabel">Componente</label>
+                    <select id="danoComponente" style="padding:8px 12px; border:1px solid #ddd; border-radius:5px; font-size:14px;">
+                        <option value="" data-i18n="selecionarPlaceholder">Selecione...</option>
+                        <option value="Alma Princ.">Alma Princ.</option>
+                        <option value="Alma Secund.">Alma Secund.</option>
+                        <option value="Alma A">Alma A</option>
+                        <option value="Alma B">Alma B</option>
+                        <option value="Alma C">Alma C</option>
+                        <option value="BF">BF</option>
+                        <option value="BA">BA</option>
+                        <option value="TE">TE</option>
+                        <option value="LE">LE</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-weight:bold; color:#555; font-size:13px; display:block; margin-bottom:5px;" data-i18n="danoCamaraLabel">Câmara</label>
+                    <select id="danoCamara" style="padding:8px 12px; border:1px solid #ddd; border-radius:5px; font-size:14px;">
+                        <option value="" data-i18n="selecionarPlaceholder">Selecione...</option>
+                        <option value="Câmara A">Câmara A</option>
+                        <option value="Câmara B">Câmara B</option>
+                        <option value="Câmara C">Câmara C</option>
+                    </select>
                 </div>
             </div>
             <div style="margin-top:20px;">
@@ -1391,9 +1473,13 @@
             dadosDanos: dadosDanos,
             tipoReparo: tipoReparo,
             defeitoSelecionado: defeitoSelecionado,
+            danoTipo: document.getElementById('danoTipo')?.value || '',
             danoDescricao: document.getElementById('danoDescricao')?.value || '',
             danoZi: document.getElementById('danoZi')?.value || '',
             danoZf: document.getElementById('danoZf')?.value || '',
+            danoCasca: document.getElementById('danoCasca')?.value || '',
+            danoComponente: document.getElementById('danoComponente')?.value || '',
+            danoCamara: document.getElementById('danoCamara')?.value || '',
             relatorioAtual: relatorioAtual,
             tecnicos: window.dadosTecnicos && window.dadosTecnicos.length ? window.dadosTecnicos : capturarTecnicos(),
             idiomaAtual: idiomaAtual
@@ -1543,9 +1629,13 @@
                 document.getElementById('nivel0').classList.add('hidden');
                 document.getElementById('nivel2').classList.remove('hidden');
                 document.getElementById('nivel3').classList.add('hidden');
+                document.getElementById('danoTipo').value = dados.danoTipo || '';
                 document.getElementById('danoDescricao').value = dados.danoDescricao || '';
                 document.getElementById('danoZi').value = dados.danoZi || '';
                 document.getElementById('danoZf').value = dados.danoZf || '';
+                document.getElementById('danoCasca').value = dados.danoCasca || '';
+                document.getElementById('danoComponente').value = dados.danoComponente || '';
+                document.getElementById('danoCamara').value = dados.danoCamara || '';
                 atualizarBotoesTipoReparo();
                 return;
             }
@@ -1620,6 +1710,12 @@
             reparosInternos: 'Reparos Internos',
             reparosExternos: 'Reparos Externos',
             danoTitulo: 'Dano',
+            danoTipoLabel: 'Dano',
+            selecionarPlaceholder: 'Selecione...',
+            danoObsTexto: 'Observações adicionais (opcional)',
+            danoCascaLabel: 'Casca',
+            danoComponenteLabel: 'Componente',
+            danoCamaraLabel: 'Câmara',
             danoDescricaoTexto: 'Descreva exatamente o tipo de dano e sua localização. Incluir detalhes entre WEB, LE/TE, DW/UW, TIP e Root.',
             alertCamposObrigatorios: 'Preencha todos os campos obrigatórios (*)',
             confirmVoltarInicio: 'Tem certeza que deseja sair?',
@@ -1752,6 +1848,12 @@
             reparosInternos: 'Internal Repairs',
             reparosExternos: 'External Repairs',
             danoTitulo: 'Damage',
+            danoTipoLabel: 'Damage',
+            selecionarPlaceholder: 'Select...',
+            danoObsTexto: 'Additional notes (optional)',
+            danoCascaLabel: 'Shell',
+            danoComponenteLabel: 'Component',
+            danoCamaraLabel: 'Chamber',
             danoDescricaoTexto: 'Describe exactly the type of damage and its location. Include details between WEB, LE/TE, DW/UW, TIP and Root.',
             alertCamposObrigatorios: 'Please fill in all required fields (*)',
             confirmVoltarInicio: 'Are you sure you want to leave?',
@@ -1884,6 +1986,12 @@
             reparosInternos: 'Reparaciones Internas',
             reparosExternos: 'Reparaciones Externas',
             danoTitulo: 'Daño',
+            danoTipoLabel: 'Daño',
+            selecionarPlaceholder: 'Seleccione...',
+            danoObsTexto: 'Observaciones adicionales (opcional)',
+            danoCascaLabel: 'Cáscara',
+            danoComponenteLabel: 'Componente',
+            danoCamaraLabel: 'Cámara',
             danoDescricaoTexto: 'Describa exactamente el tipo de daño y su ubicación. Incluya detalles entre WEB, LE/TE, DW/UW, TIP y Root.',
             alertCamposObrigatorios: 'Complete todos los campos obligatorios (*)',
             confirmVoltarInicio: '¿Está seguro de que desea salir?',
@@ -2897,6 +3005,10 @@ const todasEtapas = [
         document.getElementById('wizardContainer').innerHTML = '';
         camposMasterData.forEach(campo => {
             const el = document.getElementById(`md_${campo.id}`);
+            if (el) el.value = '';
+        });
+        ['danoTipo', 'danoDescricao', 'danoZi', 'danoZf', 'danoCasca', 'danoComponente', 'danoCamara'].forEach(id => {
+            const el = document.getElementById(id);
             if (el) el.value = '';
         });
         atualizarBotoesTipoReparo();
@@ -4019,9 +4131,15 @@ const todasEtapas = [
                 </div>
 
                 <div style="background:#f1f3f5; padding: 12px 15px; border-radius: 6px; margin-bottom: 10px; font-size:13px;">
-                    <strong>Dano:</strong> ${escapeHtml(document.getElementById('danoDescricao')?.value || defeitoSelecionado) || '-'}
-                    &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Zi:</strong> ${escapeHtml(document.getElementById('danoZi')?.value) || '-'}
-                    &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Zf:</strong> ${escapeHtml(document.getElementById('danoZf')?.value) || '-'}
+                    <strong>Dano:</strong> ${escapeHtml(formatarDescricaoDano({
+                        danoTipo: document.getElementById('danoTipo')?.value || '',
+                        danoZi: document.getElementById('danoZi')?.value || '',
+                        danoZf: document.getElementById('danoZf')?.value || '',
+                        danoCasca: document.getElementById('danoCasca')?.value || '',
+                        danoComponente: document.getElementById('danoComponente')?.value || '',
+                        danoCamara: document.getElementById('danoCamara')?.value || '',
+                        defeitoSelecionado: defeitoSelecionado
+                    }))}
                 </div>
                 
                 <hr style="margin: 15px 0;">
@@ -4086,9 +4204,13 @@ const todasEtapas = [
         dadosDanos.push({
             tipoReparo: tipoReparo,
             defeitoSelecionado: defeitoSelecionado,
+            danoTipo: document.getElementById('danoTipo')?.value || '',
             danoDescricao: document.getElementById('danoDescricao')?.value || '',
             danoZi: document.getElementById('danoZi')?.value || '',
             danoZf: document.getElementById('danoZf')?.value || '',
+            danoCasca: document.getElementById('danoCasca')?.value || '',
+            danoComponente: document.getElementById('danoComponente')?.value || '',
+            danoCamara: document.getElementById('danoCamara')?.value || '',
             relatorioAtual: relatorioAtual
         });
 
@@ -4098,9 +4220,10 @@ const todasEtapas = [
         relatorioAtual = { defeito: '', etapas: [], imagens: {} };
         imagensTemp = {};
         document.getElementById('wizardContainer').innerHTML = '';
-        document.getElementById('danoDescricao').value = '';
-        document.getElementById('danoZi').value = '';
-        document.getElementById('danoZf').value = '';
+        ['danoTipo', 'danoDescricao', 'danoZi', 'danoZf', 'danoCasca', 'danoComponente', 'danoCamara'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
         atualizarBotoesTipoReparo();
 
         document.getElementById('nivel0').classList.add('hidden');
@@ -4151,6 +4274,18 @@ const todasEtapas = [
 
     // Monta a tabela de índice, com faixa de fotos calculada em sequência
     // (Dano 1: fotos 1 a 20, Dano 2: fotos 21 a 35, etc).
+    // Resumo padronizado do dano: Defeito / Casca / Componente / Câmara / Zi / Zf
+    // — usado tanto no índice quanto no cabeçalho de cada dano no corpo do relatório.
+    function formatarDescricaoDano(dano) {
+        const defeito = dano.danoTipo || dano.defeitoSelecionado || '-';
+        const casca = dano.danoCasca || '-';
+        const componente = dano.danoComponente || '-';
+        const camara = dano.danoCamara || '-';
+        const zi = dano.danoZi || '-';
+        const zf = dano.danoZf || '-';
+        return `${defeito} / ${casca} / ${componente} / ${camara} / ${zi} / ${zf}`;
+    }
+
     function montarIndiceDanos(listaDanos) {
         let contadorFotos = 1;
         let linhas = '';
@@ -4175,9 +4310,7 @@ const todasEtapas = [
             linhas += `
                 <tr>
                     <td style="padding:8px; border:1px solid #333; text-align:center; vertical-align:top; font-weight:bold;">${idx + 1}</td>
-                    <td style="padding:8px; border:1px solid #333; vertical-align:top;">${escapeHtml(dano.danoDescricao || dano.defeitoSelecionado) || '-'}</td>
-                    <td style="padding:8px; border:1px solid #333; text-align:center; vertical-align:top;">${escapeHtml(dano.danoZi) || '-'}</td>
-                    <td style="padding:8px; border:1px solid #333; text-align:center; vertical-align:top;">${escapeHtml(dano.danoZf) || '-'}</td>
+                    <td style="padding:8px; border:1px solid #333; vertical-align:top;">${escapeHtml(formatarDescricaoDano(dano))}</td>
                     <td style="padding:8px; border:1px solid #333; text-align:center; vertical-align:top;">${nomesEtapas || '-'}</td>
                     <td style="padding:8px; border:1px solid #333; text-align:center; vertical-align:top;">${faixaFotos}</td>
                 </tr>
@@ -4191,8 +4324,6 @@ const todasEtapas = [
                         <tr style="background:#f1f3f5;">
                             <th style="padding:8px; border:1px solid #333;">N°</th>
                             <th style="padding:8px; border:1px solid #333;">DANO</th>
-                            <th style="padding:8px; border:1px solid #333;">Zi</th>
-                            <th style="padding:8px; border:1px solid #333;">Zf</th>
                             <th style="padding:8px; border:1px solid #333;">ETAPAS</th>
                             <th style="padding:8px; border:1px solid #333;">IMAGENS</th>
                         </tr>
@@ -4211,9 +4342,7 @@ const todasEtapas = [
 
         return `
             <div style="background:#f1f3f5; padding:8px 15px; border-radius:6px; margin:20px 0 10px; font-size:13px;">
-                <strong>Dano ${indice + 1}:</strong> ${escapeHtml(dano.danoDescricao || dano.defeitoSelecionado) || '-'}
-                &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Zi:</strong> ${escapeHtml(dano.danoZi) || '-'}
-                &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Zf:</strong> ${escapeHtml(dano.danoZf) || '-'}
+                <strong>Dano ${indice + 1}:</strong> ${escapeHtml(formatarDescricaoDano(dano))}
             </div>
             ${montarHtmlEtapasDano(etapasPreenchidas, relatorio.generico)}
         `;
@@ -4285,9 +4414,13 @@ const todasEtapas = [
         const danoAtual = {
             tipoReparo: tipoReparo,
             defeitoSelecionado: defeitoSelecionado,
+            danoTipo: document.getElementById('danoTipo')?.value || '',
             danoDescricao: document.getElementById('danoDescricao')?.value || '',
             danoZi: document.getElementById('danoZi')?.value || '',
             danoZf: document.getElementById('danoZf')?.value || '',
+            danoCasca: document.getElementById('danoCasca')?.value || '',
+            danoComponente: document.getElementById('danoComponente')?.value || '',
+            danoCamara: document.getElementById('danoCamara')?.value || '',
             relatorioAtual: relatorioAtual
         };
         const todosOsDanos = [...dadosDanos, danoAtual];
