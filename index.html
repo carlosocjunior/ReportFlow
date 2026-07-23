@@ -1156,7 +1156,7 @@
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 30px;">
-            <button class="btn-dashboard-ts" onclick="abrirDashboardTimesheet()" data-i18n="dashboardBtn">Dashboard</button>
+            <button class="btn-dashboard-ts" id="btnDashboardTs" onclick="abrirDashboardTimesheet()" data-i18n="dashboardBtn">Dashboard</button>
             <button class="btn-submit" onclick="gerarRelatorioTimesheet()" data-i18n="gerarRelatorioBtn">Gerar Relatório</button>
         </div>
     </div>
@@ -1835,6 +1835,7 @@
             etapaSemNomeLabel: 'Etapa sem nome',
             dashboardBtn: 'Dashboard',
             dashboardTitulo: 'Dashboard - TimeSheet',
+            semAcessoDashboard: 'Você não tem permissão para acessar o Dashboard.',
             dashboardFecharBtn: 'Fechar',
             dashboardGrafico1Titulo: 'Horas Trabalhadas x Standby (por dia)',
             dashboardGrafico2Titulo: 'Acumulado da Semana: Horas Normais x Extras',
@@ -1973,6 +1974,7 @@
             etapaSemNomeLabel: 'Unnamed step',
             dashboardBtn: 'Dashboard',
             dashboardTitulo: 'Dashboard - TimeSheet',
+            semAcessoDashboard: 'You do not have permission to access the Dashboard.',
             dashboardFecharBtn: 'Close',
             dashboardGrafico1Titulo: 'Hours Worked x Standby (per day)',
             dashboardGrafico2Titulo: 'Week Total: Regular Hours x Overtime',
@@ -2111,6 +2113,7 @@
             etapaSemNomeLabel: 'Etapa sin nombre',
             dashboardBtn: 'Dashboard',
             dashboardTitulo: 'Dashboard - TimeSheet',
+            semAcessoDashboard: 'No tiene permiso para acceder al Dashboard.',
             dashboardFecharBtn: 'Cerrar',
             dashboardGrafico1Titulo: 'Horas Trabajadas x Standby (por día)',
             dashboardGrafico2Titulo: 'Acumulado de la Semana: Horas Normales x Extras',
@@ -2414,6 +2417,9 @@ const todasEtapas = [
             const nome = document.getElementById(`tecnico${i}_nome`)?.value.trim() || '';
             if (nome) tsTecnicosDisponiveis.push(nome);
         }
+
+        const btnDashboard = document.getElementById('btnDashboardTs');
+        if (btnDashboard) btnDashboard.style.display = podeVerDashboard() ? '' : 'none';
 
         renderizarTimesheet();
     }
@@ -2942,6 +2948,10 @@ const todasEtapas = [
     }
 
     function abrirDashboardTimesheet() {
+        if (!podeVerDashboard()) {
+            alert(t('semAcessoDashboard'));
+            return;
+        }
         const dados = calcularDadosDashboardTimesheet();
 
         document.getElementById('dashboardTsTitulo').textContent = t('dashboardTitulo');
@@ -4665,6 +4675,27 @@ Fechar
     // TIMESHEET - GERAR RELATÓRIO
     // ==========================================
     function gerarRelatorioTimesheet() {
+        // Valida se os dados do cliente obrigatórios estão preenchidos
+        const camposTs = ['customer', 'site', 'regionCountry', 'turbineNo', 'bladeSetNo'];
+        let faltaCampo = false;
+        camposMasterData.forEach(campo => {
+            if (!camposTs.includes(campo.id) || !campo.obrigatorio) return;
+            const el = document.getElementById(`ts_md_${campo.id}`);
+            if (el) {
+                const valor = el.value.trim();
+                if (!valor) {
+                    faltaCampo = true;
+                    el.style.borderColor = '#dc3545';
+                } else {
+                    el.style.borderColor = '#ddd';
+                }
+            }
+        });
+        if (faltaCampo) {
+            alert(t('alertCamposObrigatorios'));
+            return;
+        }
+
         // Salva dados atuais
         salvarObservacaoTimesheet();
         salvarAssinaturaTimesheet();
