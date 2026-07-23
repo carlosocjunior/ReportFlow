@@ -931,10 +931,9 @@
     <!-- CABEÇALHO -->
     <div class="header">
     <div class="header-left">
-        <div style="font-family: Arial, sans-serif; line-height: 1.1; text-align: center; padding: 4px 12px; border-right: 2px solid #007bff;">
-            <div style="font-size: 22px; font-weight: 900; color: #007bff; letter-spacing: 1px;">SYNVORA</div>
-            <div style="font-size: 14px; font-weight: 700; color: #333; letter-spacing: 2px;">LABS</div>
-            <div style="font-size: 9px; font-weight: 600; color: #666; letter-spacing: 1px;">SMARTOPERATIONSPLATFORM</div>
+        <div style="font-family: Arial, sans-serif; line-height: 1.1; text-align: center; padding: 4px 12px; border-right: 2px solid #007bff; display:flex; flex-direction:column; align-items:center;">
+            <img src="logo-synvora.png" alt="Synvora Labs" style="width:50px; height:auto; margin-bottom:2px;">
+            <div style="font-size: 9px; font-weight: 400; color: #666;">Smart Operations Platform</div>
         </div>
         <div>
             <h1>ReportFlow</h1>
@@ -1179,6 +1178,22 @@
         // Restaura a posição do cursor (senão ele pula pro final a cada letra)
         if (inicioSelecao !== null) {
             el.setSelectionRange(inicioSelecao, fimSelecao);
+        }
+    });
+
+    // ==========================================
+    // FECHAR MODAIS COM CLIQUE FORA OU ESC
+    // (todos os pop-ups/dashboards usam a classe .modal-overlay;
+    // aqui, "oculto" é a classe que escode a janela)
+    // ==========================================
+    document.addEventListener('click', function (evento) {
+        if (evento.target.classList && evento.target.classList.contains('modal-overlay')) {
+            evento.target.classList.add('oculto');
+        }
+    });
+    document.addEventListener('keydown', function (evento) {
+        if (evento.key === 'Escape') {
+            document.querySelectorAll('.modal-overlay:not(.oculto)').forEach(m => m.classList.add('oculto'));
         }
     });
 
@@ -4256,8 +4271,8 @@ const todasEtapas = [
             <div style="font-family: Arial, sans-serif; max-width:1100px; margin:0 auto; padding:30px 30px 0;">
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #007bff; padding-bottom:15px; margin-bottom:20px;">
                     <div>
-                        <div style="font-size:24px; font-weight:900; color:#007bff; letter-spacing:1px;">SYNVORA LABS</div>
-                        <div style="font-size:11px; color:#666; letter-spacing:1px;">SMART OPERATIONS PLATFORM</div>
+                        <img src="https://carlosocjunior.github.io/ReportFlow/logo-synvora.png" alt="Synvora Labs" style="width:60px; height:auto; display:block; margin-bottom:2px;">
+                        <div style="font-size:11px; color:#666;">Smart Operations Platform</div>
                     </div>
                     <div style="text-align:right;">
                         <h1 style="margin:0; color:#2C3E50; font-size:22px;">Blade Repair Report</h1>
