@@ -1009,46 +1009,7 @@
             <div style="margin-bottom:15px; max-width:400px;">
                 <select id="danoTipo" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; font-size:14px;">
                     <option value="" data-i18n="selecionarPlaceholder">Selecione...</option>
-                    <option value="Bonding, Cracks in the adhesive line">Bonding, Cracks in the adhesive line</option>
-                    <option value="Adhesive not cured">Adhesive not cured</option>
-                    <option value="Bonding, Lack of adhesive, Edges">Bonding, Lack of adhesive, Edges</option>
-                    <option value="Too thick adhesive, Edges">Too thick adhesive, Edges</option>
-                    <option value="Bonding, Lack of adhesive, Webs">Bonding, Lack of adhesive, Webs</option>
-                    <option value="Too thick adhesive, Webs">Too thick adhesive, Webs</option>
-                    <option value="Carbon fiber shaft">Carbon fiber shaft</option>
-                    <option value="Component, Erosion">Component, Erosion</option>
-                    <option value="Component, Damage">Component, Damage</option>
-                    <option value="Spoiler">Spoiler</option>
-                    <option value="Component, Appearance out of specification">Component, Appearance out of specification</option>
-                    <option value="Other component failure">Other component failure</option>
-                    <option value="Component, Position out of tolerance">Component, Position out of tolerance</option>
-                    <option value="Receptor / Lightning System">Receptor / Lightning System</option>
-                    <option value="Laminate, Cracks in laminate">Laminate, Cracks in laminate</option>
-                    <option value="Laminate, Laminate Appearance">Laminate, Laminate Appearance</option>
-                    <option value="LE / TE Crack (cut flange)">LE / TE Crack (cut flange)</option>
-                    <option value="Leading / Trailing Edge Flange Offset">Leading / Trailing Edge Flange Offset</option>
-                    <option value="LE / TE Crack (resin)">LE / TE Crack (resin)</option>
-                    <option value="Missing Grinding">Missing Grinding</option>
-                    <option value="Laminate, Delamination">Laminate, Delamination</option>
-                    <option value="Crack in sandwich core material">Crack in sandwich core material</option>
-                    <option value="Laminate, Air voids">Laminate, Air voids</option>
-                    <option value="Balsa misplacement / gap">Balsa misplacement / gap</option>
-                    <option value="Laminate, Dry glass">Laminate, Dry glass</option>
-                    <option value="Foreign object in laminate">Foreign object in laminate</option>
-                    <option value="Laminate, Wrinkle">Laminate, Wrinkle</option>
-                    <option value="Hole in laminate">Hole in laminate</option>
-                    <option value="Impact in Laminate">Impact in Laminate</option>
-                    <option value="Laminate, Flange delamination">Laminate, Flange delamination</option>
-                    <option value="Gelcoat, Chip">Gelcoat, Chip</option>
-                    <option value="Gelcoat, Cracks">Gelcoat, Cracks</option>
-                    <option value="Gelcoat, Damage">Gelcoat, Damage</option>
-                    <option value="Gelcoat, Flaking">Gelcoat, Flaking</option>
-                    <option value="Gelcoat, Pinholes">Gelcoat, Pinholes</option>
-                    <option value="Gelcoat, Wear and Tear">Gelcoat, Wear and Tear</option>
-                    <option value="Gelcoat, Contamination">Gelcoat, Contamination</option>
-                    <option value="Other gelcoat failure / Color defect">Other gelcoat failure / Color defect</option>
-                    <option value="Thin Gelcoat">Thin Gelcoat</option>
-                    <option value="Gelcoat runs">Gelcoat runs</option>
+                    <!-- opções geradas dinamicamente por renderizarOpcoesDano(), conforme LISTA_DANOS e idiomaAtual -->
                 </select>
             </div>
 
@@ -2146,10 +2107,84 @@
         });
         aplicarIdioma();
         renderizarMasterData();
+        renderizarOpcoesDano();
         camposMasterData.forEach(campo => {
             const el = document.getElementById(`md_${campo.id}`);
             if (el && valoresAtuais[campo.id]) el.value = valoresAtuais[campo.id];
         });
+    }
+
+    // ==========================================
+    // LISTA DE TIPOS DE DANO (dropdown "Dano")
+    // value/label = inglês, texto oficial usado no relatório final impresso
+    // (PDF) e no idioma "es" da interface (por enquanto sem tradução própria
+    // pro espanhol, mantém o inglês). labelPt = tradução técnica pro
+    // português, exibida só quando idiomaAtual === 'pt'.
+    // ==========================================
+    const LISTA_DANOS = [
+        { label: 'Bonding, Cracks in the adhesive line', labelPt: 'Trinca na linha de colagem' },
+        { label: 'Adhesive not cured', labelPt: 'Adesivo não curado' },
+        { label: 'Bonding, Lack of adhesive, Edges', labelPt: 'Falta de adesivo nas bordas' },
+        { label: 'Too thick adhesive, Edges', labelPt: 'Excesso de adesivo nas bordas' },
+        { label: 'Bonding, Lack of adhesive, Webs', labelPt: 'Falta de adesivo nas webs / almas' },
+        { label: 'Too thick adhesive, Webs', labelPt: 'Excesso de adesivo nas webs / almas' },
+        { label: 'Carbon fiber shaft', labelPt: 'Eixo de fibra de carbono' },
+        { label: 'Component, Erosion', labelPt: 'Erosão em componente' },
+        { label: 'Component, Damage', labelPt: 'Dano em componente' },
+        { label: 'Spoiler', labelPt: 'Spoiler / Defletor' },
+        { label: 'Component, Appearance out of specification', labelPt: 'Aparência do componente fora de especificação' },
+        { label: 'Other component failure', labelPt: 'Outra falha em componente' },
+        { label: 'Component, Position out of tolerance', labelPt: 'Posição do componente fora de tolerância' },
+        { label: 'Receptor / Lightning System', labelPt: 'Sistema de proteção contra descargas atmosféricas (SPDA) / Sistema de para-raios' },
+        { label: 'Laminate, Cracks in laminate', labelPt: 'Trinca no laminado' },
+        { label: 'Laminate, Laminate Appearance', labelPt: 'Aparência do laminado' },
+        { label: 'LE / TE Crack (cut flange)', labelPt: 'Trinca em LE/TE (flange cortada)' },
+        { label: 'Leading / Trailing Edge Flange Offset', labelPt: 'Desalinhamento da flange do bordo de ataque / fuga' },
+        { label: 'LE / TE Crack (resin)', labelPt: 'Trinca em LE/TE (resina)' },
+        { label: 'Missing Grinding', labelPt: 'Falta de lixamento' },
+        { label: 'Laminate, Delamination', labelPt: 'Delaminação do laminado' },
+        { label: 'Crack in sandwich core material', labelPt: 'Trinca no material do núcleo sanduíche' },
+        { label: 'Laminate, Air voids', labelPt: 'Bolhas / Vazios de ar no laminado' },
+        { label: 'Balsa misplacement / gap', labelPt: 'Deslocamento / Folga da balsa' },
+        { label: 'Laminate, Dry glass', labelPt: 'Fibra seca no laminado' },
+        { label: 'Foreign object in laminate', labelPt: 'Objeto estranho no laminado' },
+        { label: 'Laminate, Wrinkle', labelPt: 'Ruga / Ondulação no laminado' },
+        { label: 'Hole in laminate', labelPt: 'Furo no laminado' },
+        { label: 'Impact in Laminate', labelPt: 'Impacto no laminado' },
+        { label: 'Laminate, Flange delamination', labelPt: 'Delaminação da flange' },
+        { label: 'Gelcoat, Chip', labelPt: 'Lascamento de gelcoat' },
+        { label: 'Gelcoat, Cracks', labelPt: 'Trinca no gelcoat' },
+        { label: 'Gelcoat, Damage', labelPt: 'Dano no gelcoat' },
+        { label: 'Gelcoat, Flaking', labelPt: 'Descascamento / Desplacamento de gelcoat' },
+        { label: 'Gelcoat, Pinholes', labelPt: 'Pinholes / Poros no gelcoat' },
+        { label: 'Gelcoat, Wear and Tear', labelPt: 'Desgaste natural do gelcoat' },
+        { label: 'Gelcoat, Contamination', labelPt: 'Contaminação no gelcoat' },
+        { label: 'Other gelcoat failure / Color defect', labelPt: 'Outra falha de gelcoat / Defeito de cor' },
+        { label: 'Thin Gelcoat', labelPt: 'Gelcoat com espessura insuficiente' },
+        { label: 'Gelcoat runs', labelPt: 'Escorrimento de gelcoat' }
+    ];
+
+    // O "value" de cada <option> permanece sempre em inglês (é o texto
+    // canônico salvo nos relatórios); só o texto exibido muda com o idioma.
+    function danoLabel(dano) {
+        if (idiomaAtual === 'pt') return dano.labelPt || dano.label;
+        return dano.label; // es e en usam o texto original em inglês
+    }
+
+    function renderizarOpcoesDano() {
+        const select = document.getElementById('danoTipo');
+        if (!select) return;
+        const valorSelecionado = select.value;
+
+        select.querySelectorAll('option[value]:not([value=""])').forEach(op => op.remove());
+        LISTA_DANOS.forEach(dano => {
+            const option = document.createElement('option');
+            option.value = dano.label; // valor em inglês, estável entre idiomas
+            option.textContent = danoLabel(dano);
+            select.appendChild(option);
+        });
+
+        if (valorSelecionado) select.value = valorSelecionado;
     }
 
     // ==========================================
@@ -4904,6 +4939,7 @@ Fechar
         }
         aplicarIdioma();
         renderizarMasterData();
+        renderizarOpcoesDano();
         irParaPainel();
         iniciarRevalidacaoPeriodicaSessao();
         console.log('Blade Repair - ReportFlow carregado!');
